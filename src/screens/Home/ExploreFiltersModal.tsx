@@ -1,7 +1,7 @@
 import React from 'react';
-import { View, StyleSheet, TouchableOpacity, ScrollView } from 'react-native';
+import { View, TouchableOpacity, ScrollView } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Colors, FontSize, BorderRadius, Shadows } from '../../config/theme';
+import { Colors } from '../../config/theme';
 import { Text } from '@/src/components/ui/text';
 import { CategoryChip } from '../../components/CategoryChip';
 import { CATEGORIES } from '../../data/mockData';
@@ -21,23 +21,23 @@ export const ExploreFiltersModal: React.FC<{ navigation: any }> = ({ navigation 
     const filteredCount = getFilteredEvents().length;
 
     return (
-        <View style={styles.container}>
+        <View className="flex-1 bg-background rounded-tl-3xl rounded-tr-3xl px-5 pt-3">
             {/* Handle bar */}
-            <View style={styles.handleBar} />
+            <View className="w-10 h-1 bg-border rounded-full self-center mb-4" />
 
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Header */}
-                <View style={styles.header}>
-                    <Text style={styles.title}>Filtros</Text>
+                <View className="flex-row justify-between items-center mb-6">
+                    <Text className="text-2xl font-bold text-text">Filtros</Text>
                     <TouchableOpacity onPress={() => navigation.goBack()}>
                         <Ionicons name="close" size={24} color={Colors.text} />
                     </TouchableOpacity>
                 </View>
 
                 {/* Categories */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Categorias</Text>
-                    <View style={styles.categoriesGrid}>
+                <View className="mb-7">
+                    <Text className="text-lg font-semibold text-text mb-[14px]">Categorias</Text>
+                    <View className="flex-row flex-wrap gap-[10px]">
                         {CATEGORIES.map((cat) => (
                             <CategoryChip
                                 key={cat.id}
@@ -45,18 +45,18 @@ export const ExploreFiltersModal: React.FC<{ navigation: any }> = ({ navigation 
                                 icon={cat.icon}
                                 selected={filters.categories.includes(cat.name)}
                                 onPress={() => toggleCategory(cat.name)}
-                                style={styles.chip}
+                                style={{ minWidth: 0 }}
                             />
                         ))}
                     </View>
                 </View>
 
                 {/* Price */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Preço</Text>
-                    <View style={styles.sliderRow}>
-                        <Text style={styles.sliderLabel}>R$ 0</Text>
-                        <View style={styles.sliderContainer}>
+                <View className="mb-7">
+                    <Text className="text-lg font-semibold text-text mb-[14px]">Preço</Text>
+                    <View className="flex-row items-center gap-2">
+                        <Text className="text-xs text-textSecondary font-medium min-w-[50px] text-center">R$ 0</Text>
+                        <View className="flex-1">
                             <Slider
                                 minimumValue={0}
                                 maximumValue={10000}
@@ -68,23 +68,23 @@ export const ExploreFiltersModal: React.FC<{ navigation: any }> = ({ navigation 
                                 thumbTintColor={Colors.primary}
                             />
                         </View>
-                        <Text style={styles.sliderLabel}>
+                        <Text className="text-xs text-textSecondary font-medium min-w-[50px] text-center">
                             {filters.priceMax >= 10000 ? '∞' : `R$ ${filters.priceMax}`}
                         </Text>
                     </View>
-                    <View style={styles.priceValue}>
-                        <Text style={styles.priceValueText}>
+                    <View className="items-center mt-1">
+                        <Text className="text-[13px] text-primary font-semibold">
                             Até {filters.priceMax >= 10000 ? 'sem limite' : `R$ ${filters.priceMax}`}
                         </Text>
                     </View>
                 </View>
 
                 {/* Distance */}
-                <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Distância</Text>
-                    <View style={styles.sliderRow}>
-                        <Text style={styles.sliderLabel}>0 km</Text>
-                        <View style={styles.sliderContainer}>
+                <View className="mb-7">
+                    <Text className="text-lg font-semibold text-text mb-[14px]">Distância</Text>
+                    <View className="flex-row items-center gap-2">
+                        <Text className="text-xs text-textSecondary font-medium min-w-[50px] text-center">0 km</Text>
+                        <View className="flex-1">
                             <Slider
                                 minimumValue={0}
                                 maximumValue={100}
@@ -96,160 +96,42 @@ export const ExploreFiltersModal: React.FC<{ navigation: any }> = ({ navigation 
                                 thumbTintColor={Colors.primary}
                             />
                         </View>
-                        <Text style={styles.sliderLabel}>{filters.distanceMax}+ km</Text>
+                        <Text className="text-xs text-textSecondary font-medium min-w-[50px] text-center">
+                            {filters.distanceMax}+ km
+                        </Text>
                     </View>
-                    <View style={styles.distanceBadge}>
-                        <Text style={styles.distanceBadgeText}>{filters.distanceMax} km</Text>
+                    <View className="self-center bg-chipBackground px-4 py-[6px] rounded-2xl mt-2">
+                        <Text className="text-[13px] font-semibold text-primary">
+                            {filters.distanceMax} km
+                        </Text>
                     </View>
                 </View>
 
                 {/* Results count */}
-                <View style={styles.resultCount}>
-                    <Text style={styles.resultCountText}>{filteredCount} resultados encontrados</Text>
+                <View className="items-center mb-5">
+                    <Text className="text-[13px] text-textSecondary font-medium">
+                        {filteredCount} resultados encontrados
+                    </Text>
                 </View>
 
                 {/* Buttons */}
-                <View style={styles.buttons}>
+                <View className="flex-row gap-3 mb-10">
                     <TouchableOpacity
-                        style={styles.resetButton}
+                        className="flex-1 py-4 rounded-xl border-[1.5px] border-border items-center"
                         onPress={resetFilters}
                         activeOpacity={0.7}
                     >
-                        <Text style={styles.resetText}>Limpar</Text>
+                        <Text className="text-base font-semibold text-text">Limpar</Text>
                     </TouchableOpacity>
                     <TouchableOpacity
-                        style={styles.applyButton}
+                        className="flex-[2] py-4 rounded-xl bg-primary items-center"
                         onPress={() => navigation.goBack()}
                         activeOpacity={0.85}
                     >
-                        <Text style={styles.applyText}>Aplicar</Text>
+                        <Text className="text-base font-bold text-textInverse">Aplicar</Text>
                     </TouchableOpacity>
                 </View>
             </ScrollView>
         </View>
     );
-};
-
-const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: Colors.background,
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
-        paddingHorizontal: 20,
-        paddingTop: 12,
-    },
-    handleBar: {
-        width: 40,
-        height: 4,
-        backgroundColor: Colors.border,
-        borderRadius: 2,
-        alignSelf: 'center',
-        marginBottom: 16,
-    },
-    header: {
-        flexDirection: 'row',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        marginBottom: 24,
-    },
-    title: {
-        fontSize: FontSize['2xl'],
-        fontWeight: '700',
-        color: Colors.text,
-    },
-    section: {
-        marginBottom: 28,
-    },
-    sectionTitle: {
-        fontSize: FontSize.lg,
-        fontWeight: '600',
-        color: Colors.text,
-        marginBottom: 14,
-    },
-    categoriesGrid: {
-        flexDirection: 'row',
-        flexWrap: 'wrap',
-        gap: 10,
-    },
-    chip: {
-        minWidth: 0,
-    },
-    sliderRow: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-    },
-    sliderContainer: {
-        flex: 1,
-    },
-    sliderLabel: {
-        fontSize: 12,
-        color: Colors.textSecondary,
-        fontWeight: '500',
-        minWidth: 50,
-        textAlign: 'center',
-    },
-    priceValue: {
-        alignItems: 'center',
-        marginTop: 4,
-    },
-    priceValueText: {
-        fontSize: 13,
-        color: Colors.primary,
-        fontWeight: '600',
-    },
-    distanceBadge: {
-        alignSelf: 'center',
-        backgroundColor: Colors.chipBackground,
-        paddingHorizontal: 16,
-        paddingVertical: 6,
-        borderRadius: 16,
-        marginTop: 8,
-    },
-    distanceBadgeText: {
-        fontSize: 13,
-        fontWeight: '600',
-        color: Colors.primary,
-    },
-    resultCount: {
-        alignItems: 'center',
-        marginBottom: 20,
-    },
-    resultCountText: {
-        fontSize: 13,
-        color: Colors.textSecondary,
-        fontWeight: '500',
-    },
-    buttons: {
-        flexDirection: 'row',
-        gap: 12,
-        marginBottom: 40,
-    },
-    resetButton: {
-        flex: 1,
-        paddingVertical: 16,
-        borderRadius: BorderRadius.xl,
-        borderWidth: 1.5,
-        borderColor: Colors.border,
-        alignItems: 'center',
-    },
-    resetText: {
-        fontSize: 16,
-        fontWeight: '600',
-        color: Colors.text,
-    },
-    applyButton: {
-        flex: 2,
-        paddingVertical: 16,
-        borderRadius: BorderRadius.xl,
-        backgroundColor: Colors.primary,
-        alignItems: 'center',
-        ...Shadows.medium,
-    },
-    applyText: {
-        fontSize: 16,
-        fontWeight: '700',
-        color: Colors.textInverse,
-    },
-});
+};  

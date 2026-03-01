@@ -20,6 +20,7 @@ import { EditProfileScreen } from '../screens/Profile/EditProfileScreen';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { useUserStore } from '../store/useUserStore';
 import { Colors } from '../config/theme';
+import { AppHeader } from '../components/AppHeader';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -29,18 +30,8 @@ const CommunityStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
 
 const HomeStackScreen = () => (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
+    <HomeStack.Navigator screenOptions={{ headerShown: true, header: () => <AppHeader /> }}>
         <HomeStack.Screen name="HomeMain" component={HomeScreen} />
-        <HomeStack.Screen name="ExploreFilters" component={ExploreFiltersModal}
-            options={{ presentation: 'modal' }} />
-        <HomeStack.Screen name="EventDetail" component={EventDetailScreen} />
-        <HomeStack.Screen name="Chat" component={ChatScreen} />
-    </HomeStack.Navigator>
-);
-
-const ExploreStackScreen = () => (
-    <HomeStack.Navigator screenOptions={{ headerShown: false }}>
-        <HomeStack.Screen name="ExploreMain" component={HomeScreen} />
         <HomeStack.Screen name="ExploreFilters" component={ExploreFiltersModal}
             options={{ presentation: 'modal' }} />
         <HomeStack.Screen name="EventDetail" component={EventDetailScreen} />
@@ -59,15 +50,15 @@ const MapStackScreen = () => (
 );
 
 const CommunityStackScreen = () => (
-    <CommunityStack.Navigator screenOptions={{ headerShown: false }}>
-        <CommunityStack.Screen name="CommunityMain" component={CommunityScreen} />
+    <CommunityStack.Navigator screenOptions={{ headerShown: true, header: () => <AppHeader /> }}>
+        <CommunityStack.Screen name="Comunidade" component={CommunityScreen} />
         <CommunityStack.Screen name="EventDetail" component={EventDetailScreen} />
         <CommunityStack.Screen name="Chat" component={ChatScreen} />
     </CommunityStack.Navigator>
 );
 
 const ProfileStackScreen = () => (
-    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+    <ProfileStack.Navigator screenOptions={{ headerShown: true }}>
         <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
         <ProfileStack.Screen name="EditProfile" component={EditProfileScreen} />
         <ProfileStack.Screen name="EventDetail" component={EventDetailScreen} />
@@ -80,8 +71,7 @@ const MainTabs = () => (
         tabBar={(props) => <CustomTabBar {...props} />}
         screenOptions={{ headerShown: false }}
     >
-        <Tab.Screen name="HomeTab" component={HomeStackScreen} />
-        <Tab.Screen name="ExploreTab" component={ExploreStackScreen} />
+        <Tab.Screen name="ExploreTab" component={HomeStackScreen} />
         <Tab.Screen name="MapTab" component={MapStackScreen} />
         <Tab.Screen name="CommunityTab" component={CommunityStackScreen} />
         <Tab.Screen name="ProfileTab" component={ProfileStackScreen} />
