@@ -57,7 +57,7 @@ export const CreateEventModal: React.FC<{ navigation: any }> = ({ navigation }) 
             <View style={styles.handleBar} />
 
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Criar Evento</Text>
+                <Text style={styles.headerTitle}>Criar Encontro</Text>
                 <TouchableOpacity onPress={() => navigation.goBack()}>
                     <Ionicons name="close" size={24} color={Colors.text} />
                 </TouchableOpacity>
@@ -85,7 +85,7 @@ export const CreateEventModal: React.FC<{ navigation: any }> = ({ navigation }) 
                     <Text style={styles.label}>Descrição</Text>
                     <Input variant="outline" size="xl" style={[styles.inputStyle, { height: 100 }]}>
                         <InputField
-                            placeholder="Descreva seu evento..."
+                            placeholder="Descreva seu encontro..."
                             value={description}
                             onChangeText={setDescription}
                             multiline
@@ -215,7 +215,7 @@ export const CreateEventModal: React.FC<{ navigation: any }> = ({ navigation }) 
 
                 {/* Create Button */}
                 <TouchableOpacity style={styles.createButton} onPress={handleCreate} activeOpacity={0.85}>
-                    <Text style={styles.createButtonText}>Criar Evento</Text>
+                    <Text style={styles.createButtonText}>Criar Encontro</Text>
                 </TouchableOpacity>
             </ScrollView>
         </KeyboardAvoidingView>

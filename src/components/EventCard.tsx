@@ -3,6 +3,7 @@ import { View, TouchableOpacity, ImageBackground, Dimensions } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows, BorderRadius } from '../config/theme';
 import { Text } from '@/src/components/ui/text';
+import { ConfirmationBar } from './ConfirmationBar';
 import { WayMeetEvent } from '../types';
 import { formatEventDateTime, formatPrice } from '../utils/helpers';
 
@@ -28,8 +29,16 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress, onJoin, co
                 className={`w-full justify-start items-end p-[10px] ${compact ? 'h-[120px]' : 'h-[160px]'}`}
                 imageStyle={{ borderTopLeftRadius: BorderRadius.xl, borderTopRightRadius: BorderRadius.xl }}
             >
-                <View className="bg-black/50 px-[10px] py-1 rounded-xl">
-                    <Text className="text-textInverse text-[11px] font-medium">{event.category}</Text>
+                <View className="flex-row gap-2">
+                    {event.isEphemeral && (
+                        <View className="bg-orange-500/90 px-[10px] py-1 rounded-xl flex-row items-center gap-1">
+                            <Ionicons name="flash" size={10} color="white" />
+                            <Text className="text-white text-[10px] font-bold">Efêmero</Text>
+                        </View>
+                    )}
+                    <View className="bg-black/50 px-[10px] py-1 rounded-xl">
+                        <Text className="text-textInverse text-[11px] font-medium">{event.category}</Text>
+                    </View>
                 </View>
             </ImageBackground>
 
@@ -53,12 +62,12 @@ export const EventCard: React.FC<EventCardProps> = ({ event, onPress, onJoin, co
                     <Text className="text-sm font-bold text-primary">
                         {formatPrice(event.price)}
                     </Text>
-                    <View className="flex-row items-center gap-1">
-                        <Ionicons name="people-outline" size={14} color={Colors.textSecondary} />
-                        <Text className="text-xs text-textSecondary">
-                            {event.attendees.length}/{event.maxParticipants}
-                        </Text>
-                    </View>
+                    <ConfirmationBar
+                        interested={event.interestedCount}
+                        confirmed={event.confirmedCount}
+                        arrived={event.arrivedCount}
+                        compact
+                    />
                 </View>
             </View>
         </TouchableOpacity>

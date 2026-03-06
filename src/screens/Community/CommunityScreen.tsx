@@ -15,7 +15,7 @@ export const CommunityScreen: React.FC<{ navigation: any }> = ({ navigation }) =
         <View className="flex-1 bg-background">
             <View className="flex flex-col p-4 gap-y-2 mb-2">
                 <Text className="text-2xl font-bold text-text">Fique por dentro da sua comunidade</Text>
-                <Text className="text-md text-textSecondary mt-1">Veja os eventos próximos a você e das pessoas que você segue</Text>
+                <Text className="text-md text-textSecondary mt-1">Veja os encontros próximos a você e das pessoas que você segue</Text>
             </View>
             <Divider className="mb-3" />
             <FlatList

@@ -11,6 +11,8 @@ import { useUserStore } from '../../store/useUserStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChatMessage } from '../../types';
 import { getTimeAgo } from '../../utils/helpers';
+import { usePresenceStore } from '../../store/usePresenceStore';
+import { useEventsStore } from '../../store/useEventsStore';
 
 export const ChatScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
@@ -20,6 +22,16 @@ export const ChatScreen: React.FC<{ route: any; navigation: any }> = ({ route, n
     const [text, setText] = useState('');
     const flatListRef = useRef<FlatList>(null);
     const eventMessages = messages[eventId] || [];
+    const { events } = useEventsStore();
+    const { activeUsers } = usePresenceStore();
+
+    // Count online members from event attendees
+    const currentEvent = events.find((e) => e.id === eventId);
+    const attendeeIds = currentEvent?.attendees.map((a) => a.id) || [];
+    const onlineCount = activeUsers.filter((u) => {
+        const ago = Date.now() - new Date(u.lastActive).getTime();
+        return attendeeIds.includes(u.id) && ago < 10 * 60 * 1000;
+    }).length;
 
     useEffect(() => { fetchMessages(eventId); }, [eventId]);
 
@@ -63,7 +75,17 @@ export const ChatScreen: React.FC<{ route: any; navigation: any }> = ({ route, n
                 </TouchableOpacity>
                 <View style={{ flex: 1, marginLeft: 8 }}>
                     <Text style={styles.headerTitle} numberOfLines={1}>{eventTitle}</Text>
-                    <Text style={styles.headerSub}>Chat do evento</Text>
+                    <Text style={styles.headerSub}>
+                        Chat do encontro{onlineCount > 0 ? ` · ` : ''}
+                    </Text>
+                    {onlineCount > 0 && (
+                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                            <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#22C55E' }} />
+                            <Text style={[styles.headerSub, { color: '#22C55E', fontWeight: '600' }]}>
+                                {onlineCount} online
+                            </Text>
+                        </View>
+                    )}
                 </View>
             </View>
             <FlatList ref={flatListRef} data={eventMessages} renderItem={renderMessage}

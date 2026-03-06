@@ -1,4 +1,8 @@
-import { User, Category, WayMeetEvent, Itinerary, Place, ChatMessage } from '../types';
+import {
+    User, Category, WayMeetEvent, Itinerary, Place, ChatMessage,
+    SocialIntention, MicroCommunity, SocialRoute, HeatZone, NearbyActivity,
+    PresenceUser, ActivityFeedItem,
+} from '../types';
 
 export const CATEGORIES: Category[] = [
     { id: '1', name: 'Family', icon: '👨‍👩‍👧‍👦', color: '#FF7A00' },
@@ -13,7 +17,7 @@ export const CATEGORIES: Category[] = [
     { id: '10', name: 'Musical', icon: '🎵', color: '#673AB7' },
     { id: '11', name: 'Ecotour', icon: '🌿', color: '#009688' },
     { id: '12', name: 'Gastronomic', icon: '🍽️', color: '#F44336' },
-    { id: '13', name: 'Eventos', icon: '🎉', color: '#3F51B5' },
+    { id: '13', name: 'Encontros', icon: '🎉', color: '#3F51B5' },
     { id: '14', name: 'Business', icon: '💼', color: '#607D8B' },
 ];
 
@@ -32,6 +36,11 @@ export const MOCK_USERS: User[] = [
         createdAt: '2024-01-15T10:00:00Z',
         emailVerified: true,
         gdprConsent: true,
+        mode: 'morador',
+        reputation: 4.8,
+        hostEventsCount: 12,
+        communities: ['nomades-digitais', 'esportes-londrina'],
+        lastActive: new Date(Date.now() - 2 * 60 * 1000).toISOString(),
     },
     {
         id: '2',
@@ -47,6 +56,11 @@ export const MOCK_USERS: User[] = [
         createdAt: '2024-02-20T14:30:00Z',
         emailVerified: true,
         gdprConsent: true,
+        mode: 'visitante',
+        reputation: 4.5,
+        hostEventsCount: 3,
+        communities: ['foodies', 'expats-br'],
+        lastActive: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
     },
     {
         id: '3',
@@ -62,6 +76,11 @@ export const MOCK_USERS: User[] = [
         createdAt: '2024-03-10T09:15:00Z',
         emailVerified: true,
         gdprConsent: true,
+        mode: 'morador',
+        reputation: 4.9,
+        hostEventsCount: 28,
+        communities: ['esportes-londrina', 'trilheiros'],
+        lastActive: new Date(Date.now() - 1 * 60 * 1000).toISOString(),
     },
     {
         id: '4',
@@ -77,6 +96,11 @@ export const MOCK_USERS: User[] = [
         createdAt: '2024-01-20T16:45:00Z',
         emailVerified: true,
         gdprConsent: true,
+        mode: 'visitante',
+        reputation: 4.7,
+        hostEventsCount: 5,
+        communities: ['praia-lovers', 'expats-br'],
+        lastActive: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
     },
 ];
 
@@ -99,6 +123,10 @@ export const MOCK_EVENTS: WayMeetEvent[] = [
         price: 0,
         isPublic: true,
         createdAt: '2025-03-10T10:00:00Z',
+        interestedCount: 15,
+        confirmedCount: 7,
+        arrivedCount: 3,
+        isEphemeral: false,
     },
     {
         id: '2',
@@ -118,6 +146,10 @@ export const MOCK_EVENTS: WayMeetEvent[] = [
         price: 0,
         isPublic: true,
         createdAt: '2025-03-11T14:30:00Z',
+        interestedCount: 8,
+        confirmedCount: 5,
+        arrivedCount: 0,
+        isEphemeral: false,
     },
     {
         id: '3',
@@ -137,6 +169,10 @@ export const MOCK_EVENTS: WayMeetEvent[] = [
         price: 25,
         isPublic: true,
         createdAt: '2025-03-12T08:00:00Z',
+        interestedCount: 12,
+        confirmedCount: 6,
+        arrivedCount: 2,
+        isEphemeral: false,
     },
     {
         id: '4',
@@ -156,6 +192,10 @@ export const MOCK_EVENTS: WayMeetEvent[] = [
         price: 0,
         isPublic: true,
         createdAt: '2025-03-13T11:00:00Z',
+        interestedCount: 10,
+        confirmedCount: 8,
+        arrivedCount: 0,
+        isEphemeral: false,
     },
     {
         id: '5',
@@ -175,6 +215,10 @@ export const MOCK_EVENTS: WayMeetEvent[] = [
         price: 120,
         isPublic: true,
         createdAt: '2025-03-14T16:00:00Z',
+        interestedCount: 20,
+        confirmedCount: 8,
+        arrivedCount: 0,
+        isEphemeral: false,
     },
     {
         id: '6',
@@ -194,7 +238,72 @@ export const MOCK_EVENTS: WayMeetEvent[] = [
         price: 15,
         isPublic: true,
         createdAt: '2025-03-09T12:00:00Z',
+        interestedCount: 18,
+        confirmedCount: 12,
+        arrivedCount: 0,
+        isEphemeral: false,
     },
+];
+
+export const MOCK_INTENTIONS: SocialIntention[] = [
+    { id: '1', emoji: '☕', label: 'café agora', activeCount: 12 },
+    { id: '2', emoji: '🍻', label: 'drinks', activeCount: 8 },
+    { id: '3', emoji: '⚽', label: 'esporte', activeCount: 5 },
+    { id: '4', emoji: '🚶', label: 'explorar', activeCount: 5 },
+    { id: '5', emoji: '🎵', label: 'música ao vivo', activeCount: 3 },
+];
+
+export const MOCK_COMMUNITIES: MicroCommunity[] = [
+    { id: '1', name: 'Ano novo em BC', emoji: '🇧🇷', memberCount: 156, imageUrl: 'https://cdn-clubecandeias.s3.sa-east-1.amazonaws.com/uploads/images/parques-atracoes-balneario-camboriu%281%29.jpeg', description: 'aproveitando final de ano em Balneário Camboriú e conhecendo pessoas novas' },
+    { id: '2', name: 'Nômades Digitais', emoji: '💻', memberCount: 89, imageUrl: 'https://images.unsplash.com/photo-1522071820081-009f0129c71c?w=400&h=300&fit=crop', description: 'Trabalhe de qualquer lugar' },
+    { id: '3', name: 'Esportes na cidade', emoji: '⚽', memberCount: 234, imageUrl: 'https://images.unsplash.com/photo-1461896836934-bd45ba8fcf9b?w=400&h=300&fit=crop', description: 'Futebol, vôlei, corrida e mais' },
+    { id: '4', name: 'Foodies', emoji: '🍽️', memberCount: 178, imageUrl: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?w=400&h=300&fit=crop', description: 'Amantes de gastronomia' },
+    { id: '5', name: 'Trilheiros', emoji: '🥾', memberCount: 67, imageUrl: 'https://images.unsplash.com/photo-1551632811-561732d1e306?w=400&h=300&fit=crop', description: 'Trilhas e aventuras ao ar livre' },
+];
+
+export const MOCK_ROUTES: SocialRoute[] = [
+    {
+        id: '1',
+        title: 'Rota de Bares',
+        description: 'Os melhores bares e happy hours da cidade',
+        imageUrl: 'https://images.unsplash.com/photo-1572116469696-31de0f17cc34?w=400&h=300&fit=crop',
+        placesCount: 5,
+        activeGroups: 4,
+        activeParticipants: 12,
+    },
+    {
+        id: '2',
+        title: 'Rota de Cafés',
+        description: 'Cafeterias especiais e escondidas',
+        imageUrl: 'https://images.unsplash.com/photo-1447933601403-0c6688de566e?w=400&h=300&fit=crop',
+        placesCount: 3,
+        activeGroups: 2,
+        activeParticipants: 6,
+    },
+    {
+        id: '3',
+        title: 'Tour Cultural',
+        description: 'Museus, galerias e espaços culturais',
+        imageUrl: 'https://images.unsplash.com/photo-1554907984-15263bfd63bd?w=400&h=300&fit=crop',
+        placesCount: 4,
+        activeGroups: 1,
+        activeParticipants: 3,
+    },
+];
+
+export const MOCK_HEAT_ZONES: HeatZone[] = [
+    { id: '1', name: 'Centro', intensity: 0.9, latitude: -23.3045, longitude: -51.1696, activityCount: 24 },
+    { id: '2', name: 'Lago Igapó', intensity: 0.7, latitude: -23.3200, longitude: -51.1750, activityCount: 15 },
+    { id: '3', name: 'Gleba Palhano', intensity: 0.5, latitude: -23.3300, longitude: -51.1800, activityCount: 8 },
+    { id: '4', name: 'Catuaí', intensity: 0.3, latitude: -23.3400, longitude: -51.1600, activityCount: 4 },
+];
+
+export const MOCK_NEARBY_ACTIVITIES: NearbyActivity[] = [
+    { id: '1', emoji: '☕', label: 'Café', peopleCount: 3, distance: '800m', time: 'agora', eventId: '3', locationName: 'Café Escondido' },
+    { id: '2', emoji: '🍻', label: 'Drinks', peopleCount: 5, distance: '1km', time: 'agora', locationName: 'Bar Valentino' },
+    { id: '3', emoji: '🚶', label: 'Caminhada', peopleCount: 2, distance: '500m', time: 'agora', locationName: 'Lago Igapó' },
+    { id: '4', emoji: '⚽', label: 'Futebol', peopleCount: 8, distance: '2km', time: 'em 30 min', eventId: '1', locationName: 'Praça do Centro' },
+    { id: '5', emoji: '🧘', label: 'Yoga', peopleCount: 4, distance: '1.5km', time: 'em 1h', eventId: '6', locationName: 'Lago Igapó' },
 ];
 
 export const MOCK_ITINERARIES: Itinerary[] = [
@@ -305,6 +414,32 @@ export const MOCK_PLACES: Place[] = [
         latitude: -23.3060,
         longitude: -51.1680,
     },
+    {
+        id: '5',
+        name: 'Mirante Secreto',
+        description: 'Vista panorâmica escondida da cidade',
+        imageUrl: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&h=300&fit=crop',
+        rating: 4.8,
+        address: 'R. do Mirante, s/n',
+        city: 'Londrina',
+        category: 'mirante',
+        categoryIcons: ['🏔️', '📸'],
+        latitude: -23.2950,
+        longitude: -51.1550,
+    },
+    {
+        id: '6',
+        name: 'Café Escondido',
+        description: 'Cafeteria artesanal com grãos selecionados',
+        imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
+        rating: 4.6,
+        address: 'R. dos Cafés, 42',
+        city: 'Londrina',
+        category: 'café',
+        categoryIcons: ['☕', '🍰'],
+        latitude: -23.3080,
+        longitude: -51.1650,
+    },
 ];
 
 export const MOCK_MESSAGES: ChatMessage[] = [
@@ -352,5 +487,88 @@ export const MOCK_MESSAGES: ChatMessage[] = [
         text: 'Perfeito! Nos vemos às 17h então, galera!',
         timestamp: '2025-03-10T10:18:00Z',
         isSystem: false,
+    },
+];
+
+export const MOCK_PRESENCE_USERS: PresenceUser[] = [
+    {
+        id: '1', displayName: 'Gabriel', avatarUrl: MOCK_USERS[0].avatarUrl,
+        latitude: -23.3045, longitude: -51.1696, intentionType: 'cafe', intentionEmoji: '☕',
+        lastActive: new Date(Date.now() - 2 * 60 * 1000).toISOString(), mode: 'morador',
+    },
+    {
+        id: '2', displayName: 'Maria Silva', avatarUrl: MOCK_USERS[1].avatarUrl,
+        latitude: -23.3080, longitude: -51.1650, intentionType: 'cafe', intentionEmoji: '☕',
+        lastActive: new Date(Date.now() - 3 * 60 * 1000).toISOString(), mode: 'visitante',
+    },
+    {
+        id: '3', displayName: 'Pedro Santos', avatarUrl: MOCK_USERS[2].avatarUrl,
+        latitude: -23.3200, longitude: -51.1750, intentionType: 'esporte', intentionEmoji: '⚽',
+        lastActive: new Date(Date.now() - 1 * 60 * 1000).toISOString(), mode: 'morador',
+    },
+    {
+        id: '4', displayName: 'Ana Costa', avatarUrl: MOCK_USERS[3].avatarUrl,
+        latitude: -23.3100, longitude: -51.1620, intentionType: 'explorar', intentionEmoji: '🚶',
+        lastActive: new Date(Date.now() - 7 * 60 * 1000).toISOString(), mode: 'visitante',
+    },
+    {
+        id: '5', displayName: 'Lucas Ferreira', avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=150&h=150&fit=crop&crop=face',
+        latitude: -23.3060, longitude: -51.1680, intentionType: 'cafe', intentionEmoji: '☕',
+        lastActive: new Date(Date.now() - 4 * 60 * 1000).toISOString(), mode: 'morador',
+    },
+    {
+        id: '6', displayName: 'Camila Ribeiro', avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&h=150&fit=crop&crop=face',
+        latitude: -23.3300, longitude: -51.1800,
+        lastActive: new Date(Date.now() - 15 * 60 * 1000).toISOString(), mode: 'morador',
+    },
+];
+
+export const MOCK_ACTIVITY_FEED: ActivityFeedItem[] = [
+    {
+        id: 'af1', type: 'event_created', userId: '3', userName: 'Pedro Santos',
+        userAvatar: MOCK_USERS[2].avatarUrl, description: 'criou "Futebol na praça"',
+        timestamp: new Date(Date.now() - 3 * 60 * 1000).toISOString(),
+        metadata: { eventId: '1', locationName: 'Praça do Centro' },
+    },
+    {
+        id: 'af2', type: 'user_arrived', userId: '2', userName: 'Maria Silva',
+        userAvatar: MOCK_USERS[1].avatarUrl, description: 'chegou ao Lago Igapó',
+        timestamp: new Date(Date.now() - 5 * 60 * 1000).toISOString(),
+        metadata: { locationName: 'Lago Igapó' },
+    },
+    {
+        id: 'af3', type: 'route_started', userId: '1', userName: 'Gabriel',
+        userAvatar: MOCK_USERS[0].avatarUrl, description: 'iniciou a Rota de Cafés',
+        timestamp: new Date(Date.now() - 8 * 60 * 1000).toISOString(),
+        metadata: { routeId: '2' },
+    },
+    {
+        id: 'af4', type: 'intention_set', userId: '4', userName: 'Ana Costa',
+        userAvatar: MOCK_USERS[3].avatarUrl, description: 'quer explorar a cidade',
+        timestamp: new Date(Date.now() - 10 * 60 * 1000).toISOString(),
+    },
+    {
+        id: 'af5', type: 'event_joined', userId: '2', userName: 'Maria Silva',
+        userAvatar: MOCK_USERS[1].avatarUrl, description: 'confirmou presença no "Café Cultural"',
+        timestamp: new Date(Date.now() - 12 * 60 * 1000).toISOString(),
+        metadata: { eventId: '3' },
+    },
+    {
+        id: 'af6', type: 'community_joined', userId: '4', userName: 'Ana Costa',
+        userAvatar: MOCK_USERS[3].avatarUrl, description: 'entrou na comunidade Trilheiros',
+        timestamp: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
+        metadata: { communityId: '5' },
+    },
+    {
+        id: 'af7', type: 'user_arrived', userId: '3', userName: 'Pedro Santos',
+        userAvatar: MOCK_USERS[2].avatarUrl, description: 'chegou ao "Futebol na praça"',
+        timestamp: new Date(Date.now() - 22 * 60 * 1000).toISOString(),
+        metadata: { eventId: '1', locationName: 'Praça do Centro' },
+    },
+    {
+        id: 'af8', type: 'event_created', userId: '1', userName: 'Gabriel',
+        userAvatar: MOCK_USERS[0].avatarUrl, description: 'criou "Sunset Yoga"',
+        timestamp: new Date(Date.now() - 30 * 60 * 1000).toISOString(),
+        metadata: { eventId: '6', locationName: 'Lago Igapó' },
     },
 ];

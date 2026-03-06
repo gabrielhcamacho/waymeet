@@ -47,6 +47,11 @@ const mapSupabaseUser = (supabaseUser: {
         createdAt: supabaseUser.created_at || new Date().toISOString(),
         emailVerified: !!supabaseUser.email_confirmed_at,
         gdprConsent: meta.gdpr_consent || false,
+        mode: meta.mode || 'visitante',
+        reputation: meta.reputation || 0,
+        hostEventsCount: meta.host_events_count || 0,
+        communities: meta.communities || [],
+        lastActive: new Date().toISOString(),
     };
 };
 

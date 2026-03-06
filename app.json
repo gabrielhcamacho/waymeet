@@ -13,7 +13,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.matheus-arruda.WayMeet"
+      "bundleIdentifier": "com.gabriel.waymeet"
     },
     "android": {
       "adaptiveIcon": {

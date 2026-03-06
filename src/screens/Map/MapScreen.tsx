@@ -6,11 +6,16 @@ import { Colors, FontSize, Shadows, BorderRadius } from '../../config/theme';
 import { Text } from '@/src/components/ui/text';
 import { FloatingActionButton } from '../../components/FloatingActionButton';
 import { AvatarRow } from '../../components/AvatarRow';
+import { MapLayerChips } from '../../components/MapLayerChips';
+import { ConfirmationBar } from '../../components/ConfirmationBar';
 import { useEventsStore } from '../../store/useEventsStore';
 import { locationService } from '../../services/locationService';
 import { formatEventDateTime } from '../../utils/helpers';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { WayMeetEvent } from '../../types';
+import { WayMeetEvent, MapLayer } from '../../types';
+import { MOCK_PLACES, MOCK_PRESENCE_USERS } from '../../data/mockData';
+import { usePresenceStore } from '../../store/usePresenceStore';
+import { useIntentionStore } from '../../store/useIntentionStore';
 
 const { width, height } = Dimensions.get('window');
 
@@ -18,16 +23,28 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const { events } = useEventsStore();
     const mapRef = useRef<MapView>(null);
+    const [activeLayers, setActiveLayers] = useState<MapLayer[]>(['eventos']);
+    const { activeUsers, setActiveUsers } = usePresenceStore();
     const [userLocation, setUserLocation] = useState({
         latitude: -23.3045,
         longitude: -51.1696,
     });
+
+    const toggleLayer = (layer: MapLayer) => {
+        setActiveLayers((prev) =>
+            prev.includes(layer)
+                ? prev.filter((l) => l !== layer)
+                : [...prev, layer]
+        );
+    };
 
     useEffect(() => {
         (async () => {
             const loc = await locationService.getCurrentLocation();
             setUserLocation({ latitude: loc.latitude, longitude: loc.longitude });
         })();
+        // Initialize presence data
+        setActiveUsers(MOCK_PRESENCE_USERS);
     }, []);
 
     const goToEvent = (event: WayMeetEvent) => {
@@ -49,9 +66,10 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 showsUserLocation
                 showsMyLocationButton={false}
             >
-                {events.map((event) => (
+                {/* Event Markers */}
+                {activeLayers.includes('eventos') && events.map((event) => (
                     <Marker
-                        key={event.id}
+                        key={`event-${event.id}`}
                         coordinate={{
                             latitude: event.latitude,
                             longitude: event.longitude,
@@ -93,11 +111,76 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         </Callout>
                     </Marker>
                 ))}
+
+                {/* Place Markers (green) */}
+                {activeLayers.includes('lugares') && MOCK_PLACES.map((place) => (
+                    <Marker
+                        key={`place-${place.id}`}
+                        coordinate={{ latitude: place.latitude, longitude: place.longitude }}
+                    >
+                        <View style={styles.markerContainer}>
+                            <View style={[styles.marker, { backgroundColor: '#22C55E', borderColor: '#16A34A' }]}>
+                                <Text style={styles.markerEmoji}>{place.categoryIcons[0] || '📍'}</Text>
+                            </View>
+                            <View style={[styles.markerTail, { backgroundColor: '#22C55E' }]} />
+                        </View>
+                        <Callout style={styles.callout}>
+                            <View style={styles.calloutContent}>
+                                <View style={styles.calloutLeft}>
+                                    <Text style={styles.calloutTitle}>{place.name}</Text>
+                                    <Text style={styles.calloutDate}>⭐ {place.rating} · {place.category}</Text>
+                                </View>
+                            </View>
+                        </Callout>
+                    </Marker>
+                ))}
+
+                {/* People Markers (presence-aware: only active in last 10 min) */}
+                {activeLayers.includes('pessoas') && activeUsers
+                    .filter((person) => {
+                        const ago = Date.now() - new Date(person.lastActive).getTime();
+                        return ago < 10 * 60 * 1000; // 10 minutes
+                    })
+                    .map((person) => (
+                        <Marker
+                            key={`person-${person.id}`}
+                            coordinate={{
+                                latitude: person.latitude,
+                                longitude: person.longitude,
+                            }}
+                        >
+                            <View style={{
+                                width: 36, height: 36, borderRadius: 18,
+                                backgroundColor: person.intentionEmoji ? '#10B981' : '#3B82F6',
+                                borderWidth: 3, borderColor: 'white',
+                                justifyContent: 'center', alignItems: 'center',
+                                shadowColor: '#000', shadowOffset: { width: 0, height: 2 },
+                                shadowOpacity: 0.2, shadowRadius: 4, elevation: 3,
+                            }}>
+                                <Text style={{ fontSize: 14 }}>{person.intentionEmoji || '👤'}</Text>
+                            </View>
+                            <Callout style={styles.callout}>
+                                <View style={styles.calloutContent}>
+                                    <View style={styles.calloutLeft}>
+                                        <Text style={styles.calloutTitle}>{person.displayName}</Text>
+                                        <Text style={styles.calloutDate}>
+                                            {person.intentionType ? `quer ${person.intentionType}` : person.mode === 'morador' ? '🏠 morador' : '✈️ visitante'}
+                                        </Text>
+                                    </View>
+                                </View>
+                            </Callout>
+                        </Marker>
+                    ))}
             </MapView>
+
+            {/* Layer Chips */}
+            <View style={[styles.layerChipsContainer, { top: insets.top + 12 }]}>
+                <MapLayerChips activeLayers={activeLayers} onToggle={toggleLayer} />
+            </View>
 
             {/* My Location Button */}
             <TouchableOpacity
-                style={[styles.locationButton, { top: insets.top + 16 }]}
+                style={[styles.locationButton, { top: insets.top + 64 }]}
                 onPress={() => {
                     mapRef.current?.animateToRegion({
                         latitude: userLocation.latitude,
@@ -206,5 +289,10 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
         alignItems: 'center',
         ...Shadows.medium,
+    },
+    layerChipsContainer: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
     },
 });
