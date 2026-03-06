@@ -53,8 +53,8 @@ export const SignupScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         }
         try {
             await signup(data.email, data.password, data.displayName);
-        } catch {
-            Alert.alert('Erro', 'Erro ao criar conta');
+        } catch (error: any) {
+            Alert.alert('Erro', error?.message || 'Erro ao criar conta');
         }
     };
 

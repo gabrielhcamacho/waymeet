@@ -35,8 +35,8 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const onSubmit = async (data: LoginForm) => {
         try {
             await login(data.email, data.password);
-        } catch {
-            Alert.alert('Erro', 'Email ou senha incorretos');
+        } catch (error: any) {
+            Alert.alert('Erro', error?.message || 'Email ou senha incorretos');
         }
     };
 

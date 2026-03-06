@@ -20,9 +20,14 @@ export const ForgotPasswordScreen: React.FC<{ navigation: any }> = ({ navigation
 
     const onSubmit = async (data: { email: string }) => {
         setLoading(true);
-        await resetPassword(data.email);
-        setLoading(false);
-        setSent(true);
+        try {
+            await resetPassword(data.email);
+            setSent(true);
+        } catch (error: any) {
+            Alert.alert('Erro', error?.message || 'Erro ao enviar email de recuperação');
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (

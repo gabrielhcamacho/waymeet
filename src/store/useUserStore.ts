@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { User, AuthStatus } from '../types';
-import { MOCK_USERS } from '../data/mockData';
+import { supabase } from '../config/supabase';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 interface UserStore {
@@ -22,74 +22,129 @@ interface UserStore {
     resendVerificationEmail: () => Promise<void>;
 }
 
+/**
+ * Converte os dados do Supabase Auth em um objeto User do app.
+ */
+const mapSupabaseUser = (supabaseUser: {
+    id: string;
+    email?: string;
+    user_metadata?: Record<string, any>;
+    created_at?: string;
+    email_confirmed_at?: string | null;
+}): User => {
+    const meta = supabaseUser.user_metadata || {};
+    return {
+        id: supabaseUser.id,
+        email: supabaseUser.email || '',
+        displayName: meta.display_name || meta.full_name || '',
+        avatarUrl: meta.avatar_url || '',
+        coverPhotoUrl: meta.cover_photo_url || '',
+        homeCity: meta.home_city || '',
+        bio: meta.bio || '',
+        selectedCategories: meta.selected_categories || [],
+        followersCount: 0,
+        followingCount: 0,
+        createdAt: supabaseUser.created_at || new Date().toISOString(),
+        emailVerified: !!supabaseUser.email_confirmed_at,
+        gdprConsent: meta.gdpr_consent || false,
+    };
+};
+
 export const useUserStore = create<UserStore>((set, get) => ({
     user: null,
     authStatus: 'idle',
     hasCompletedOnboarding: false,
 
-    login: async (email: string, _password: string) => {
+    login: async (email: string, password: string) => {
         set({ authStatus: 'loading' });
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        const mockUser = MOCK_USERS.find((u) => u.email === email) || MOCK_USERS[0];
-        await AsyncStorage.setItem('session', JSON.stringify({ userId: mockUser.id }));
+        const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            set({ authStatus: 'unauthenticated' });
+            throw new Error(error.message);
+        }
+
+        const user = mapSupabaseUser(data.user);
         const onboarded = await AsyncStorage.getItem('onboarding_complete');
         set({
-            user: { ...mockUser, email },
+            user,
             authStatus: 'authenticated',
             hasCompletedOnboarding: onboarded === 'true',
         });
     },
 
-    signup: async (email: string, _password: string, displayName: string) => {
+    signup: async (email: string, password: string, displayName: string) => {
         set({ authStatus: 'loading' });
-        await new Promise((resolve) => setTimeout(resolve, 1200));
-        const newUser: User = {
-            id: Date.now().toString(),
+        const { data, error } = await supabase.auth.signUp({
             email,
-            displayName,
-            avatarUrl: '',
-            coverPhotoUrl: '',
-            homeCity: '',
-            bio: '',
-            selectedCategories: [],
-            followersCount: 0,
-            followingCount: 0,
-            createdAt: new Date().toISOString(),
-            emailVerified: false,
-            gdprConsent: true,
-        };
-        await AsyncStorage.setItem('session', JSON.stringify({ userId: newUser.id }));
-        set({ user: newUser, authStatus: 'authenticated', hasCompletedOnboarding: false });
+            password,
+            options: {
+                data: {
+                    display_name: displayName,
+                },
+            },
+        });
+
+        if (error) {
+            set({ authStatus: 'unauthenticated' });
+            throw new Error(error.message);
+        }
+
+        if (data.user) {
+            const user = mapSupabaseUser(data.user);
+            set({
+                user,
+                authStatus: 'authenticated',
+                hasCompletedOnboarding: false,
+            });
+        }
     },
 
     socialLogin: async (_provider: 'google' | 'apple') => {
+        // Social login com Supabase requer configuração OAuth no dashboard.
+        // Por enquanto, mantém placeholder — a integração completa
+        // requer expo-auth-session ou expo-web-browser.
         set({ authStatus: 'loading' });
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        const mockUser = MOCK_USERS[0];
-        await AsyncStorage.setItem('session', JSON.stringify({ userId: mockUser.id }));
-        const onboarded = await AsyncStorage.getItem('onboarding_complete');
-        set({
-            user: mockUser,
-            authStatus: 'authenticated',
-            hasCompletedOnboarding: onboarded === 'true',
-        });
+        // TODO: Implementar OAuth flow com supabase.auth.signInWithOAuth
+        set({ authStatus: 'unauthenticated' });
+        throw new Error(
+            'Login social ainda não configurado. ' +
+            'Configure o provider OAuth no Supabase Dashboard.'
+        );
     },
 
     logout: async () => {
-        await AsyncStorage.removeItem('session');
+        await supabase.auth.signOut();
+        await AsyncStorage.removeItem('onboarding_complete');
         set({ user: null, authStatus: 'unauthenticated', hasCompletedOnboarding: false });
     },
 
-    resetPassword: async (_email: string) => {
-        await new Promise((resolve) => setTimeout(resolve, 800));
-        // Mock: password reset email sent
+    resetPassword: async (email: string) => {
+        const { error } = await supabase.auth.resetPasswordForEmail(email);
+        if (error) {
+            throw new Error(error.message);
+        }
     },
 
     updateProfile: (updates: Partial<User>) => {
         const { user } = get();
         if (user) {
             set({ user: { ...user, ...updates } });
+
+            // Atualiza os metadados no Supabase de forma assíncrona
+            supabase.auth.updateUser({
+                data: {
+                    display_name: updates.displayName,
+                    avatar_url: updates.avatarUrl,
+                    cover_photo_url: updates.coverPhotoUrl,
+                    home_city: updates.homeCity,
+                    bio: updates.bio,
+                    selected_categories: updates.selectedCategories,
+                },
+            });
         }
     },
 
@@ -97,6 +152,9 @@ export const useUserStore = create<UserStore>((set, get) => ({
         const { user } = get();
         if (user) {
             set({ user: { ...user, selectedCategories: categories } });
+            supabase.auth.updateUser({
+                data: { selected_categories: categories },
+            });
         }
     },
 
@@ -106,7 +164,10 @@ export const useUserStore = create<UserStore>((set, get) => ({
     },
 
     deleteAccount: async () => {
-        await AsyncStorage.removeItem('session');
+        // Nota: deletar conta pelo client requer uma Edge Function ou
+        // usar supabase.auth.admin.deleteUser no backend.
+        // Aqui fazemos o sign out e limpamos os dados locais.
+        await supabase.auth.signOut();
         await AsyncStorage.removeItem('onboarding_complete');
         set({ user: null, authStatus: 'unauthenticated', hasCompletedOnboarding: false });
     },
@@ -114,29 +175,35 @@ export const useUserStore = create<UserStore>((set, get) => ({
     checkSession: async () => {
         set({ authStatus: 'loading' });
         try {
-            const session = await AsyncStorage.getItem('session');
-            if (session) {
-                const { userId } = JSON.parse(session);
-                const mockUser = MOCK_USERS.find((u) => u.id === userId) || MOCK_USERS[0];
-                const onboarded = await AsyncStorage.getItem('onboarding_complete');
-                set({
-                    user: mockUser,
-                    authStatus: 'authenticated',
-                    hasCompletedOnboarding: onboarded === 'true',
-                });
-            } else {
+            const { data: { session }, error } = await supabase.auth.getSession();
+
+            if (error || !session) {
                 set({ authStatus: 'unauthenticated' });
+                return;
             }
+
+            const user = mapSupabaseUser(session.user);
+            const onboarded = await AsyncStorage.getItem('onboarding_complete');
+            set({
+                user,
+                authStatus: 'authenticated',
+                hasCompletedOnboarding: onboarded === 'true',
+            });
         } catch {
             set({ authStatus: 'unauthenticated' });
         }
     },
 
     resendVerificationEmail: async () => {
-        await new Promise((resolve) => setTimeout(resolve, 500));
         const { user } = get();
-        if (user) {
-            set({ user: { ...user, emailVerified: true } });
+        if (user?.email) {
+            const { error } = await supabase.auth.resend({
+                type: 'signup',
+                email: user.email,
+            });
+            if (error) {
+                throw new Error(error.message);
+            }
         }
     },
 }));
