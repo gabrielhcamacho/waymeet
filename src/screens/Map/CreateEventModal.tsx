@@ -13,7 +13,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Input, InputField } from '@/src/components/ui/input';
 
-export const CreateEventModal: React.FC<{ navigation: any }> = ({ navigation }) => {
+export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
     const { createEvent } = useEventsStore();
     const [title, setTitle] = useState('');
@@ -23,7 +23,7 @@ export const CreateEventModal: React.FC<{ navigation: any }> = ({ navigation }) 
     const [showTimePicker, setShowTimePicker] = useState(false);
     const [category, setCategory] = useState('');
     const [maxParticipants, setMaxParticipants] = useState('10');
-    const [locationName, setLocationName] = useState('');
+    const [locationName, setLocationName] = useState(route?.params?.initialLocation || '');
     const [isPublic, setIsPublic] = useState(true);
 
     const handleCreate = () => {
@@ -38,8 +38,8 @@ export const CreateEventModal: React.FC<{ navigation: any }> = ({ navigation }) 
             category,
             date: date.toISOString().split('T')[0],
             time: `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`,
-            latitude: -23.3045 + (Math.random() - 0.5) * 0.02,
-            longitude: -51.1696 + (Math.random() - 0.5) * 0.02,
+            latitude: route?.params?.initialLatitude || (-23.3045 + (Math.random() - 0.5) * 0.02),
+            longitude: route?.params?.initialLongitude || (-51.1696 + (Math.random() - 0.5) * 0.02),
             locationName,
             creatorId: '1',
             maxParticipants: parseInt(maxParticipants, 10) || 10,

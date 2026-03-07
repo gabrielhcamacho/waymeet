@@ -23,6 +23,7 @@ import { EventDetailScreen } from '../screens/Events/EventDetailScreen';
 import { ChatScreen } from '../screens/Chat/ChatScreen';
 import { ProfileScreen } from '../screens/Profile/ProfileScreen';
 import { EditProfileScreen } from '../screens/Profile/EditProfileScreen';
+import { ExploreFiltersModal } from '../screens/Home/ExploreFiltersModal';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { useUserStore } from '../store/useUserStore';
 import { usePresenceStore } from '../store/usePresenceStore';
@@ -44,6 +45,7 @@ const RadarStackScreen = () => (
         <RadarStack.Screen name="RadarMain" component={RadarScreen} />
         <RadarStack.Screen name="EventDetail" component={EventDetailScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="CommunityDetail" component={CommunityDetailScreen} options={{ headerShown: false }} />
+        <RadarStack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
     </RadarStack.Navigator>
 );
@@ -54,6 +56,7 @@ const MapStackScreen = () => (
         <MapStack.Screen name="CreateEvent" component={CreateEventModal}
             options={{ presentation: 'modal' }} />
         <MapStack.Screen name="EventDetail" component={EventDetailScreen} />
+        <MapStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <MapStack.Screen name="Chat" component={ChatScreen} />
     </MapStack.Navigator>
 );
@@ -66,6 +69,7 @@ const AgoraStackScreen = () => (
         <AgoraStack.Screen name="EventDetail" component={EventDetailScreen} />
         <AgoraStack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
         <AgoraStack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
+        <AgoraStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <AgoraStack.Screen name="Chat" component={ChatScreen} />
     </AgoraStack.Navigator>
 );
@@ -73,6 +77,7 @@ const AgoraStackScreen = () => (
 const ExploreStackScreen = () => (
     <ExploreStack.Navigator screenOptions={{ headerShown: false }}>
         <ExploreStack.Screen name="ExploreMain" component={ExploreScreen} />
+        <ExploreStack.Screen name="ExploreFilters" component={ExploreFiltersModal} options={{ presentation: 'modal' }} />
         <ExploreStack.Screen name="RouteDetail" component={RouteDetailScreen} />
         <ExploreStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <ExploreStack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
@@ -88,6 +93,7 @@ const ProfileStackScreen = () => (
         <ProfileStack.Screen name="EditProfile" component={EditProfileScreen} />
         <ProfileStack.Screen name="EventDetail" component={EventDetailScreen} />
         <ProfileStack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
+        <ProfileStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <ProfileStack.Screen name="Chat" component={ChatScreen} />
     </ProfileStack.Navigator>
 );

@@ -3,6 +3,7 @@ import { View, ScrollView, TouchableOpacity, ImageBackground } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/src/components/ui/text';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { MOCK_PLACES } from '../../data/mockData';
 
 export const RouteDetailScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
@@ -52,25 +53,30 @@ export const RouteDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
                 {/* Places */}
                 <View className="px-5 pt-5 pb-2">
                     <Text className="text-lg font-bold text-gray-900 mb-4">Lugares da rota</Text>
-                    {Array.from({ length: socialRoute.placesCount }).map((_, i) => (
-                        <View
-                            key={i}
-                            className="flex-row items-center mb-4"
-                        >
-                            <View className="w-9 h-9 rounded-full bg-gray-900 items-center justify-center mr-3">
-                                <Text className="text-white text-[13px] font-bold">{i + 1}</Text>
-                            </View>
-                            <View className="flex-1 border-b border-gray-100 pb-3">
-                                <Text className="text-[14px] font-semibold text-gray-800">
-                                    {['Café Central', 'Parque do Lago', 'Mirante da Serra', 'Bar do Porto', 'Praça da Liberdade'][i % 5]}
-                                </Text>
-                                <Text className="text-[12px] text-gray-400 mt-0.5">
-                                    {['Café artesanal', 'Parque urbano', 'Vista panorâmica', 'Drinks e petiscos', 'Ponto de encontro'][i % 5]}
-                                </Text>
-                            </View>
-                            <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
-                        </View>
-                    ))}
+                    {Array.from({ length: socialRoute.placesCount }).map((_, i) => {
+                        const placeMock = MOCK_PLACES[i % MOCK_PLACES.length];
+                        return (
+                            <TouchableOpacity
+                                key={i}
+                                className="flex-row items-center mb-4"
+                                onPress={() => navigation.navigate('PlaceDetail', { place: placeMock })}
+                                activeOpacity={0.7}
+                            >
+                                <View className="w-9 h-9 rounded-full bg-gray-900 items-center justify-center mr-3">
+                                    <Text className="text-white text-[13px] font-bold">{i + 1}</Text>
+                                </View>
+                                <View className="flex-1 border-b border-gray-100 pb-3">
+                                    <Text className="text-[14px] font-semibold text-gray-800">
+                                        {['Café Central', 'Parque do Lago', 'Mirante da Serra', 'Bar do Porto', 'Praça da Liberdade'][i % 5]}
+                                    </Text>
+                                    <Text className="text-[12px] text-gray-400 mt-0.5">
+                                        {['Café artesanal', 'Parque urbano', 'Vista panorâmica', 'Drinks e petiscos', 'Ponto de encontro'][i % 5]}
+                                    </Text>
+                                </View>
+                                <Ionicons name="chevron-forward" size={16} color="#D1D5DB" />
+                            </TouchableOpacity>
+                        )
+                    })}
                 </View>
 
                 <View className="h-[120px]" />
