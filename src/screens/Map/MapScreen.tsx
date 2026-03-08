@@ -48,7 +48,7 @@ const EventPin = ({ event, isSelected }: { event: WayMeetEvent, isSelected: bool
     };
 
     return (
-        <View style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
+        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
             {isAgora && (
                 <Animated.View style={{
                     position: 'absolute', width: 50, height: 50, borderRadius: 25, backgroundColor: '#ff5028',
@@ -79,7 +79,7 @@ const EventPin = ({ event, isSelected }: { event: WayMeetEvent, isSelected: bool
 // -------------------------------------------------------------
 const PlacePin = ({ place, isSelected }: { place: Place, isSelected: boolean }) => {
     return (
-        <View style={{
+        <View pointerEvents="none" style={{
             flexDirection: 'row', backgroundColor: '#28c878', paddingVertical: 6, paddingHorizontal: 10,
             borderRadius: 20, alignItems: 'center',
             transform: [{ scale: isSelected ? 1.15 : 1 }],
@@ -102,7 +102,7 @@ const PlacePin = ({ place, isSelected }: { place: Place, isSelected: boolean }) 
 // -------------------------------------------------------------
 const PersonPin = ({ person, isSelected }: { person: PresenceUser, isSelected: boolean }) => {
     return (
-        <View style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
+        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
             <View style={{
                 position: 'absolute', width: isSelected ? 56 : 46, height: isSelected ? 56 : 46,
                 borderRadius: 28, backgroundColor: 'rgba(70, 130, 255, 0.25)'
@@ -169,6 +169,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const [isMinimized, setIsMinimized] = useState(false);
     const minimizeAnim = useRef(new Animated.Value(0)).current;
 
+    // Prevent MapView onPress from immediately dismissing marker click
+    const lastMarkerPress = useRef(0);
+
     useEffect(() => {
         Animated.spring(minimizeAnim, {
             toValue: isMinimized ? 1 : 0,
@@ -182,8 +185,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         PanResponder.create({
             onStartShouldSetPanResponder: () => false,
             onMoveShouldSetPanResponder: (evt, gestureState) => {
-                return Math.abs(gestureState.dy) > 15;
+                return Math.abs(gestureState.dy) > 10;
             },
+            onPanResponderTerminationRequest: () => false,
             onPanResponderRelease: (evt, gestureState) => {
                 if (gestureState.dy > 30) {
                     setIsMinimized(true);
@@ -265,6 +269,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }, [selectedItem]);
 
     const handleSelect = (type: 'event' | 'place' | 'person', data: any, lat: number, lng: number) => {
+        lastMarkerPress.current = Date.now();
         setSelectedItem({ type, data });
         setIsMinimized(false);
         mapRef.current?.animateToRegion({
@@ -311,6 +316,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 showsUserLocation
                 showsMyLocationButton={false}
                 onPress={() => {
+                    if (Date.now() - lastMarkerPress.current < 500) return;
                     setSelectedItem(null);
                     setIsMinimized(false);
                 }} // deselect on map click
@@ -323,7 +329,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         radius={800 * zone.intensity}
                         fillColor={`rgba(${activeLayers.includes('eventos') ? '255, 80, 40' : '70, 130, 255'}, ${0.15 * zone.intensity})`}
                         strokeWidth={0}
-                         strokeColor="transparent"
+                        strokeColor="transparent"
                     />
                 ))}
 
@@ -344,7 +350,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     }
                     const event = cluster.properties.event;
                     return (
-                        <Marker key={`event-${event.id}`} coordinate={{ latitude, longitude }} tracksViewChanges={false}
+                        <Marker key={`event-${event.id}`} coordinate={{ latitude, longitude }}
                             onPress={() => handleSelect('event', event, latitude, longitude)}
                         >
                             <EventPin event={event} isSelected={selectedItem?.data.id === event.id} />
@@ -354,7 +360,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
                 {/* Place Markers */}
                 {activeLayers.includes('lugares') && foursquarePlaces.map((place) => (
-                    <Marker key={`place-${place.id}`} coordinate={{ latitude: place.latitude, longitude: place.longitude }} tracksViewChanges={false}
+                    <Marker key={`place-${place.id}`} coordinate={{ latitude: place.latitude, longitude: place.longitude }}
                         onPress={() => handleSelect('place', place, place.latitude, place.longitude)}
                     >
                         <PlacePin place={place} isSelected={selectedItem?.data.id === place.id} />
@@ -366,7 +372,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     const ago = Date.now() - new Date(person.lastActive).getTime();
                     if (ago > 10 * 60 * 1000) return null; // Only active < 10m
                     return (
-                        <Marker key={`person-${person.id}`} coordinate={{ latitude: person.latitude, longitude: person.longitude }} tracksViewChanges={false}
+                        <Marker key={`person-${person.id}`} coordinate={{ latitude: person.latitude, longitude: person.longitude }}
                             onPress={() => handleSelect('person', person, person.latitude, person.longitude)}
                         >
                             <PersonPin person={person} isSelected={selectedItem?.data.id === person.id} />
@@ -384,10 +390,15 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             <Animated.View style={[
                 styles.fabLocationContainer,
                 {
-                    bottom: insets.bottom + 100,
+                    bottom: insets.bottom + 80,
+                    zIndex: 50,
                     transform: [
-                        { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -220] }) },
-                        { translateY: Animated.multiply(minimizeAnim, panelAnim.interpolate({ inputRange: [0, 1], outputRange: [140 + insets.bottom, 220] })) }
+                        {
+                            translateY: Animated.multiply(
+                                panelAnim.interpolate({ inputRange: [0, 1], outputRange: [-140, -260] }),
+                                minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+                            )
+                        }
                     ]
                 }
             ]} pointerEvents="box-none">
@@ -411,7 +422,6 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 Descoberta Bottom Sheet (Fallback when no marker selected)
                 ------------------------------------------------------------- */}
             <Animated.View
-                {...panResponder.panHandlers}
                 style={[
                     styles.bottomSheet,
                     {
@@ -421,10 +431,14 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                             { translateY: minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140 + insets.bottom] }) }
                         ]
                     }
-                ]}>
-                <TouchableOpacity onPress={() => setIsMinimized(!isMinimized)} activeOpacity={0.7} style={{ alignSelf: 'stretch', alignItems: 'center', paddingTop: 10, paddingBottom: 10, marginTop: -10 }}>
-                    <View style={[styles.dragHandle, { marginBottom: 0 }]} />
-                </TouchableOpacity>
+                ]}
+                pointerEvents={selectedItem ? 'none' : 'box-none'}>
+                {/* Drag Handle Area */}
+                <View {...panResponder.panHandlers} style={{ width: '100%', alignItems: 'center', paddingTop: 10, paddingBottom: 10, marginTop: -10 }}>
+                    <TouchableOpacity onPress={() => setIsMinimized(!isMinimized)} activeOpacity={0.7} style={{ padding: 10 }}>
+                        <View style={[styles.dragHandle, { marginBottom: 0 }]} />
+                    </TouchableOpacity>
+                </View>
                 <Text style={styles.sheetTitle}>Perto de você · {events.length} encontros</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
                     {events.slice(0, 5).map(e => (
@@ -448,7 +462,6 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 Custom Callout Card (Shows when selectedItem is valid)
                 ------------------------------------------------------------- */}
             <Animated.View
-                {...panResponder.panHandlers}
                 pointerEvents={selectedItem ? 'box-none' : 'none'}
                 style={[
                     styles.calloutCardOverlay,
@@ -462,9 +475,12 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     }
                 ]}>
                 <View style={styles.calloutCardInner}>
-                    <TouchableOpacity onPress={() => setIsMinimized(!isMinimized)} activeOpacity={0.7} style={{ alignSelf: 'stretch', alignItems: 'center', paddingTop: 10, paddingBottom: 10, marginTop: -10 }}>
-                        <View style={[styles.dragHandle, { marginBottom: 0 }]} />
-                    </TouchableOpacity>
+                    {/* Drag Handle Area */}
+                    <View {...panResponder.panHandlers} style={{ width: '100%', alignItems: 'center', paddingTop: 10, paddingBottom: 10, marginTop: -10 }}>
+                        <TouchableOpacity onPress={() => setIsMinimized(!isMinimized)} activeOpacity={0.7} style={{ padding: 10 }}>
+                            <View style={[styles.dragHandle, { marginBottom: 0 }]} />
+                        </TouchableOpacity>
+                    </View>
 
                     {selectedItem?.type === 'event' && (
                         <>
