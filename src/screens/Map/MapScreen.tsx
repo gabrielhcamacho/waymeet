@@ -78,21 +78,53 @@ const EventPin = ({ event, isSelected }: { event: WayMeetEvent, isSelected: bool
 // Helper: Place Pin (Badge Horizontal)
 // -------------------------------------------------------------
 const PlacePin = ({ place, isSelected }: { place: Place, isSelected: boolean }) => {
+    const scaleAnim = useRef(new Animated.Value(isSelected ? 1.15 : 1)).current;
+
+    useEffect(() => {
+        Animated.spring(scaleAnim, {
+            toValue: isSelected ? 1.25 : 1,
+            friction: 5, tension: 80,
+            useNativeDriver: true,
+        }).start();
+    }, [isSelected]);
+
+    const getPlaceEmoji = (category: string) => {
+        const cat = (category || '').toLowerCase();
+        if (cat.includes('restaurante') || cat.includes('comida') || cat.includes('food')) return '🍽️';
+        if (cat.includes('bar') || cat.includes('pub') || cat.includes('bebida')) return '🍸';
+        if (cat.includes('parque') || cat.includes('praça')) return '🌳';
+        if (cat.includes('museu') || cat.includes('arte')) return '🏛️';
+        if (cat.includes('mirante') || cat.includes('vista')) return '🏔️';
+        if (cat.includes('café') || cat.includes('coffee')) return '☕';
+        if (cat.includes('clube') || cat.includes('festa') || cat.includes('balada')) return '🎉';
+        return '📍';
+    };
+
+    const emoji = place.categoryIcons?.[0] || getPlaceEmoji(place.category);
+
     return (
-        <View pointerEvents="none" style={{
-            flexDirection: 'row', backgroundColor: '#28c878', paddingVertical: 6, paddingHorizontal: 10,
-            borderRadius: 20, alignItems: 'center',
-            transform: [{ scale: isSelected ? 1.15 : 1 }],
-            shadowColor: '#28c878', shadowOffset: { width: 0, height: 4 },
-            shadowOpacity: isSelected ? 0.5 : 0.2, shadowRadius: isSelected ? 6 : 3, elevation: isSelected ? 8 : 3,
-            borderColor: '#ffffff', borderWidth: isSelected ? 2 : 1
-        }}>
-            <Text style={{ fontSize: 12 }}>{place.categoryIcons?.[0] || '📍'}</Text>
+        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center' }}>
             {isSelected && (
-                <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginLeft: 6 }}>
-                    {place.name.split(' ')[0]}
-                </Text>
+                <Animated.View style={{
+                    position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: '#28c878',
+                    opacity: 0.25, transform: [{ scale: scaleAnim.interpolate({ inputRange: [1, 1.25], outputRange: [1, 1.6] }) }]
+                }} />
             )}
+            <Animated.View style={{
+                flexDirection: 'row', backgroundColor: '#28c878', paddingVertical: 6, paddingHorizontal: 10,
+                borderRadius: 20, alignItems: 'center',
+                transform: [{ scale: scaleAnim }],
+                shadowColor: '#28c878', shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: isSelected ? 0.6 : 0.2, shadowRadius: isSelected ? 8 : 3, elevation: isSelected ? 10 : 3,
+                borderColor: '#ffffff', borderWidth: isSelected ? 2 : 1
+            }}>
+                <Text style={{ fontSize: 13 }}>{emoji}</Text>
+                {isSelected && (
+                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginLeft: 6 }}>
+                        {place.name.split(' ')[0]}
+                    </Text>
+                )}
+            </Animated.View>
         </View>
     );
 };
@@ -169,6 +201,17 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const [isMinimized, setIsMinimized] = useState(false);
     const minimizeAnim = useRef(new Animated.Value(0)).current;
 
+    const minAnimValue = useRef(0);
+    useEffect(() => {
+        const listener = minimizeAnim.addListener(({ value }) => { minAnimValue.current = value; });
+        return () => minimizeAnim.removeListener(listener);
+    }, []);
+
+    const selectedItemRef = useRef<{ type: 'event' | 'place' | 'person', data: any } | null>(null);
+    useEffect(() => {
+        selectedItemRef.current = selectedItem;
+    }, [selectedItem]);
+
     // Prevent MapView onPress from immediately dismissing marker click
     const lastMarkerPress = useRef(0);
 
@@ -176,24 +219,39 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         Animated.spring(minimizeAnim, {
             toValue: isMinimized ? 1 : 0,
             useNativeDriver: true,
-            friction: 8,
-            tension: 60
+            friction: 9, tension: 55
         }).start();
     }, [isMinimized]);
 
     const panResponder = useRef(
         PanResponder.create({
             onStartShouldSetPanResponder: () => false,
-            onMoveShouldSetPanResponder: (evt, gestureState) => {
-                return Math.abs(gestureState.dy) > 10;
+            onMoveShouldSetPanResponder: (_, gestureState) => Math.abs(gestureState.dy) > 5,
+            onPanResponderGrant: () => {
+                minimizeAnim.stopAnimation();
+                minimizeAnim.setOffset(minAnimValue.current);
+                minimizeAnim.setValue(0);
+            },
+            onPanResponderMove: (_, gestureState) => {
+                const maxDist = selectedItemRef.current ? 230 + insets.bottom : 140 + insets.bottom;
+                minimizeAnim.setValue(gestureState.dy / maxDist);
             },
             onPanResponderTerminationRequest: () => false,
-            onPanResponderRelease: (evt, gestureState) => {
-                if (gestureState.dy > 30) {
-                    setIsMinimized(true);
-                } else if (gestureState.dy < -30) {
-                    setIsMinimized(false);
-                }
+            onPanResponderRelease: (_, gestureState) => {
+                minimizeAnim.flattenOffset();
+                const pos = minAnimValue.current;
+                let target = isMinimized;
+
+                if (gestureState.vy > 0.5 || pos > 0.45) target = true;
+                else if (gestureState.vy < -0.5 || pos < 0.55) target = false;
+
+                setIsMinimized(target);
+
+                Animated.spring(minimizeAnim, {
+                    toValue: target ? 1 : 0,
+                    useNativeDriver: true,
+                    friction: 9, tension: 55
+                }).start();
             }
         })
     ).current;
@@ -273,10 +331,10 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         setSelectedItem({ type, data });
         setIsMinimized(false);
         mapRef.current?.animateToRegion({
-            latitude: lat - 0.005, // offset slightly below center to fit panel
+            latitude: lat - (region.latitudeDelta * 0.25), // offset slightly below center (25% of current screen real estate) to fit panel
             longitude: lng,
-            latitudeDelta: 0.02,
-            longitudeDelta: 0.02,
+            latitudeDelta: Math.min(region.latitudeDelta, 0.02), // Preserve zoom if close, or zoom in if far
+            longitudeDelta: Math.min(region.longitudeDelta, 0.02),
         }, 500);
     };
 
@@ -334,7 +392,11 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 ))}
 
                 {/* Event Clusters & Markers */}
-                {activeLayers.includes('eventos') && clusters.map(cluster => {
+                {activeLayers.includes('eventos') && [...clusters].sort((a, b) => {
+                    const aSel = !a.properties.cluster && selectedItem?.data.id === a.properties.eventId ? 1 : 0;
+                    const bSel = !b.properties.cluster && selectedItem?.data.id === b.properties.eventId ? 1 : 0;
+                    return aSel - bSel;
+                }).map(cluster => {
                     const [longitude, latitude] = cluster.geometry.coordinates;
                     const isCluster = cluster.properties.cluster;
                     if (isCluster) {
@@ -359,7 +421,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 })}
 
                 {/* Place Markers */}
-                {activeLayers.includes('lugares') && foursquarePlaces.map((place) => (
+                {activeLayers.includes('lugares') && [...foursquarePlaces].sort((a, b) => {
+                    return (selectedItem?.data.id === a.id ? 1 : 0) - (selectedItem?.data.id === b.id ? 1 : 0);
+                }).map((place) => (
                     <Marker key={`place-${place.id}`} coordinate={{ latitude: place.latitude, longitude: place.longitude }}
                         onPress={() => handleSelect('place', place, place.latitude, place.longitude)}
                     >
@@ -368,7 +432,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 ))}
 
                 {/* Person Markers */}
-                {activeLayers.includes('pessoas') && activeUsers.map((person) => {
+                {activeLayers.includes('pessoas') && [...activeUsers].sort((a, b) => {
+                    return (selectedItem?.data.id === a.id ? 1 : 0) - (selectedItem?.data.id === b.id ? 1 : 0);
+                }).map((person) => {
                     const ago = Date.now() - new Date(person.lastActive).getTime();
                     if (ago > 10 * 60 * 1000) return null; // Only active < 10m
                     return (
@@ -396,7 +462,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         {
                             translateY: Animated.multiply(
                                 panelAnim.interpolate({ inputRange: [0, 1], outputRange: [-140, -260] }),
-                                minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0] })
+                                minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [1, 0], extrapolate: 'clamp' })
                             )
                         }
                     ]
@@ -428,7 +494,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         paddingBottom: insets.bottom + 16,
                         transform: [
                             { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 500] }) },
-                            { translateY: minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140 + insets.bottom] }) }
+                            { translateY: minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140 + insets.bottom], extrapolate: 'clamp' }) }
                         ]
                     }
                 ]}
@@ -470,7 +536,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         opacity: panelAnim.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0, 1] }),
                         transform: [
                             { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [500, 0] }) },
-                            { translateY: minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 230 + insets.bottom] }) }
+                            { translateY: minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 230 + insets.bottom], extrapolate: 'clamp' }) }
                         ]
                     }
                 ]}>
@@ -526,7 +592,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     {selectedItem?.type === 'place' && (
                         <>
                             <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
-                                <View style={{ flex: 1 }}>
+                                <View style={{ flex: 1, paddingRight: 10 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                                         <View style={{ width: 32, height: 32, backgroundColor: '#E4F8EE', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
                                             <Text style={{ fontSize: 16 }}>{selectedItem.data.categoryIcons?.[0] || '📍'}</Text>
@@ -536,7 +602,10 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                                         </Text>
                                     </View>
                                     <Text style={styles.cardTitle}>{selectedItem.data.name}</Text>
-                                    <Text style={styles.cardSubTitle} numberOfLines={1}>{selectedItem.data.address}</Text>
+                                    <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
+                                        <Ionicons name="location" size={12} color="#9CA3AF" style={{ marginRight: 4 }} />
+                                        <Text style={[styles.cardSubTitle, { flex: 1 }]} numberOfLines={1}>{selectedItem.data.address || 'Endereço não informado'}</Text>
+                                    </View>
                                 </View>
                                 <View style={styles.ratingBadge}>
                                     <Ionicons name="star" size={12} color="#fff" />
@@ -546,10 +615,18 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
                             <View style={styles.divider} />
 
-                            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 20, gap: 8 }}>
-                                {selectedItem.data.hours && <View style={styles.quickPill}><Text style={styles.quickPillTxt}>🕒 {selectedItem.data.hours}</Text></View>}
-                                {selectedItem.data.priceTier && <View style={styles.quickPill}><Text style={styles.quickPillTxt}>💰 {'$'.repeat(selectedItem.data.priceTier)}</Text></View>}
-                                <View style={styles.quickPill}><Text style={styles.quickPillTxt}>🚗 1.2km</Text></View>
+                            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
+                                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                                    {/* Mock presence for people at the location */}
+                                    <AvatarRow avatars={MOCK_PRESENCE_USERS.slice(0, 3).map(u => u.avatarUrl)} size={28} maxDisplay={3} />
+                                    <Text style={{ fontSize: 13, color: '#6B7280', marginLeft: 8 }}>
+                                        <Text style={{ fontWeight: 'bold', color: '#1F2937' }}>{selectedItem.data.id === '1' ? 12 : 5}</Text> pessoas aqui
+                                    </Text>
+                                </View>
+
+                                <View style={{ flexDirection: 'row', gap: 6 }}>
+                                    <View style={styles.quickPill}><Text style={styles.quickPillTxt}>🚗 1.2km</Text></View>
+                                </View>
                             </View>
 
                             <TouchableOpacity

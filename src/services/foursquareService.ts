@@ -86,16 +86,26 @@ export const foursquareService = {
                 const venue: FoursquareVenue = item.venue;
                 const primaryCategory = venue.categories?.[0];
 
-                // Constrói a URL do ícone se a categoria existir
+                const getCategoryEmoji = (categoryName: string) => {
+                    const cat = (categoryName || '').toLowerCase();
+                    if (cat.includes('restaurante') || cat.includes('food') || cat.includes('burger') || cat.includes('pizza') || cat.includes('sushi') || cat.includes('steak')) return '🍽️';
+                    if (cat.includes('bar') || cat.includes('pub') || cat.includes('bebida') || cat.includes('brewery')) return '🍸';
+                    if (cat.includes('parque') || cat.includes('praça') || cat.includes('park') || cat.includes('nature') || cat.includes('beach')) return '🌳';
+                    if (cat.includes('museu') || cat.includes('arte') || cat.includes('museum') || cat.includes('history')) return '🏛️';
+                    if (cat.includes('mirante') || cat.includes('vista') || cat.includes('scenic')) return '🏔️';
+                    if (cat.includes('café') || cat.includes('coffee') || cat.includes('bakery')) return '☕';
+                    if (cat.includes('clube') || cat.includes('festa') || cat.includes('balada') || cat.includes('nightclub') || cat.includes('music')) return '🎉';
+                    if (cat.includes('shopping') || cat.includes('mall') || cat.includes('store') || cat.includes('loja')) return '🛍️';
+                    if (cat.includes('gym') || cat.includes('academia') || cat.includes('fitness')) return '💪';
+                    return '📍';
+                };
+
                 let categoryIcon = '📍';
                 let categoryName = 'Local';
 
                 if (primaryCategory) {
                     categoryName = primaryCategory.name;
-                    // Foursquare ícones: prefix + bg_64 + suffix
-                    // Neste mock simplificado, estamos mapeando apenas os que temos de emoji pros mocks,
-                    // mas o Place type do WayMeet aceita URL de imagem em imageUrl.
-                    categoryIcon = '📍';
+                    categoryIcon = getCategoryEmoji(categoryName);
                 }
 
                 // Extract photos if available in V2 explore
