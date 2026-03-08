@@ -68,7 +68,7 @@ const EventPin = ({ event, isSelected }: { event: WayMeetEvent, isSelected: bool
                 borderColor: '#ffffff',
                 borderWidth: isSelected ? 2 : 1
             }}>
-                <Text style={{ transform: [{ rotate: '-45deg' }], fontSize: isSelected ? 20 : 16 }}>{getEmoji(event.category)}</Text>
+                <Text style={{ transform: [{ rotate: '45deg' }], fontSize: isSelected ? 20 : 16 }}>{getEmoji(event.category)}</Text>
             </View>
         </View>
     );
