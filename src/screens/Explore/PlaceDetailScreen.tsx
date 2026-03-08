@@ -10,6 +10,7 @@ import { ActivityFeedCard } from '../../components/ActivityFeedCard';
 import { useEventsStore } from '../../store/useEventsStore';
 import { usePresenceStore } from '../../store/usePresenceStore';
 import { useActivityFeedStore } from '../../store/useActivityFeedStore';
+import { useUserStore } from '../../store/useUserStore';
 import { MOCK_USERS } from '../../data/mockData';
 
 export const PlaceDetailScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
@@ -19,13 +20,18 @@ export const PlaceDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
     const { events } = useEventsStore();
     const { getActiveNearby } = usePresenceStore();
     const { recentActivities } = useActivityFeedStore();
+    const { user } = useUserStore();
+
+    const isBusinessOwner = user?.accountType === 'business' && user?.businessAddress?.toLowerCase() === place.address.toLowerCase();
 
     const [showGallery, setShowGallery] = useState(false);
-    const photos = [
-        place.imageUrl,
-        'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
-        'https://images.unsplash.com/photo-1525268771113-32d9e9021a97?w=400&h=300&fit=crop'
-    ];
+    const photos = place.photos && place.photos.length > 0
+        ? place.photos
+        : [
+            place.imageUrl,
+            'https://images.unsplash.com/photo-1514933651103-005eec06c04b?w=400&h=300&fit=crop',
+            'https://images.unsplash.com/photo-1525268771113-32d9e9021a97?w=400&h=300&fit=crop'
+        ];
 
     // 1. Social Activity Calculation
     const activePeopleHere = useMemo(() => {
@@ -45,25 +51,38 @@ export const PlaceDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
     }, [recentActivities, place]);
 
     // Format quick info
-    const quickInfo = [
-        { icon: 'time-outline', label: '18:00 - 02:00', sub: 'Aberto agora', color: '#10B981' },
-        { icon: 'wallet-outline', label: '$$', sub: 'R$ 40-100', color: '#6B7280' },
-        { icon: 'navigate-outline', label: '1.2 km', sub: '15 min de carro', color: '#6B7280' },
-    ];
+    const quickInfo = [];
+    if (place.hours || place.popularHours) {
+        quickInfo.push({
+            icon: 'time-outline',
+            label: place.hours || place.popularHours,
+            sub: place.hours ? 'Horário' : 'Popular Agora',
+            color: '#10B981'
+        });
+    }
+    if (place.priceTier) {
+        quickInfo.push({
+            icon: 'wallet-outline',
+            label: '$'.repeat(place.priceTier),
+            sub: 'Preço',
+            color: '#6B7280'
+        });
+    }
+    // Sempre mostrar distância mockada no quickInfo
+    quickInfo.push({ icon: 'navigate-outline', label: '1.2 km', sub: '15 min de carro', color: '#6B7280' });
 
-    const usefulLinks = [
-        { icon: 'restaurant-outline', label: 'Ver Cardápio' },
-        { icon: 'logo-instagram', label: 'Instagram' },
-        { icon: 'globe-outline', label: 'Website' },
-        { icon: 'calendar-outline', label: 'Reservas' },
-    ];
+    const usefulLinks = [];
+    if (place.menuUrl) usefulLinks.push({ icon: 'restaurant-outline', label: 'Ver Cardápio' });
+    if (place.instagram) usefulLinks.push({ icon: 'logo-instagram', label: 'Instagram' });
+    if (place.website) usefulLinks.push({ icon: 'globe-outline', label: 'Website' });
+    if (place.phone) usefulLinks.push({ icon: 'call-outline', label: 'Ligar' });
 
     return (
         <View className="flex-1 bg-white">
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* ── Hero Image ── */}
                 <ImageBackground
-                    source={{ uri: place.imageUrl }}
+                    source={{ uri: photos[0] }}
                     className="w-full h-[280px] justify-end"
                 >
                     <View className="bg-black/50 px-5 pb-6 pt-16">
@@ -127,14 +146,16 @@ export const PlaceDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
                     </View>
 
                     {/* Links */}
-                    <View className="flex-row flex-wrap gap-2">
-                        {usefulLinks.map((link, i) => (
-                            <TouchableOpacity key={i} activeOpacity={0.7} className="flex-row items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-2 rounded-full">
-                                <Ionicons name={link.icon as any} size={14} color="#4B5563" />
-                                <Text className="text-[12px] font-semibold text-gray-700">{link.label}</Text>
-                            </TouchableOpacity>
-                        ))}
-                    </View>
+                    {usefulLinks.length > 0 && (
+                        <View className="flex-row flex-wrap gap-2">
+                            {usefulLinks.map((link, i) => (
+                                <TouchableOpacity key={i} activeOpacity={0.7} className="flex-row items-center gap-1.5 bg-gray-50 border border-gray-200 px-3 py-2 rounded-full">
+                                    <Ionicons name={link.icon as any} size={14} color="#4B5563" />
+                                    <Text className="text-[12px] font-semibold text-gray-700">{link.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
                 </View>
 
                 {/* ── Atividade Social ── */}
@@ -197,16 +218,18 @@ export const PlaceDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
                 {/* (Infos moved up) */}
 
                 {/* ── Reivindicar Lugar ── */}
-                <View className="px-5 py-8 items-center">
-                    <Text className="text-xs text-gray-400 text-center mb-2">
-                        Você é proprietário deste estabelecimento?
-                    </Text>
-                    <TouchableOpacity activeOpacity={0.7}>
-                        <Text className="text-[13px] font-bold text-primary underline">
-                            Reivindicar este lugar
+                {isBusinessOwner && (
+                    <View className="px-5 py-8 items-center">
+                        <Text className="text-xs text-gray-400 text-center mb-2">
+                            Você é proprietário deste estabelecimento?
                         </Text>
-                    </TouchableOpacity>
-                </View>
+                        <TouchableOpacity activeOpacity={0.7}>
+                            <Text className="text-[13px] font-bold text-primary underline">
+                                Reivindicar este lugar
+                            </Text>
+                        </TouchableOpacity>
+                    </View>
+                )}
 
                 {/* Bottom space for fixed buttons */}
                 <View className="h-[140px]" />

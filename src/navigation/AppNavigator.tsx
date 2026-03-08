@@ -107,11 +107,23 @@ const MainTabs = () => {
         setActiveUsers(MOCK_PRESENCE_USERS);
         setActivities(MOCK_ACTIVITY_FEED);
 
+        // Request location permission immediately on mount
+        locationService.requestPermission().then(async (hasPermission) => {
+            if (hasPermission) {
+                try {
+                    const loc = await locationService.getCurrentLocation();
+                    if (loc) heartbeat(loc.latitude, loc.longitude);
+                } catch { /* ignore */ }
+            }
+        });
+
         // Heartbeat: update presence every 30s
         const interval = setInterval(async () => {
             try {
                 const loc = await locationService.getCurrentLocation();
-                heartbeat(loc.latitude, loc.longitude);
+                if (loc) {
+                    heartbeat(loc.latitude, loc.longitude);
+                }
             } catch { /* location unavailable */ }
         }, 30 * 1000);
 

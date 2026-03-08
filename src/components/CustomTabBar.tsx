@@ -66,7 +66,7 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation })
                         accessibilityState={isFocused ? { selected: true } : {}}
                         accessibilityLabel={label}
                         onPress={onPress}
-                        className="flex-1 items-center justify-center py-1"
+                        className="flex-1 items-center justify-center pt-1"
                         activeOpacity={0.7}
                     >
                         <Ionicons
@@ -75,13 +75,13 @@ export const CustomTabBar: React.FC<BottomTabBarProps> = ({ state, navigation })
                             color={isFocused ? '#FF7A00' : '#9CA3AF'}
                         />
                         <Text
-                            className={`text-[10px] mt-0.5 ${isFocused ? 'text-orange-500 font-semibold' : 'text-gray-400 font-medium'
+                            className={`text-[10px] ${isFocused ? 'text-orange-500 font-semibold' : 'text-gray-400 font-medium'
                                 }`}
                         >
                             {label}
                         </Text>
                         {isFocused && (
-                            <View className="w-1 h-1 rounded-full bg-orange-500 mt-0.5" />
+                            <View className="w-1 h-1 rounded-full bg-orange-500" />
                         )}
                     </TouchableOpacity>
                 );

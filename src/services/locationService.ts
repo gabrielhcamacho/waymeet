@@ -6,12 +6,6 @@ export interface UserLocation {
     city?: string;
 }
 
-const DEFAULT_LOCATION: UserLocation = {
-    latitude: -23.3045,
-    longitude: -51.1696,
-    city: 'Londrina, Brasil',
-};
-
 export const locationService = {
     requestPermission: async (): Promise<boolean> => {
         try {
@@ -22,10 +16,10 @@ export const locationService = {
         }
     },
 
-    getCurrentLocation: async (): Promise<UserLocation> => {
+    getCurrentLocation: async (): Promise<UserLocation | null> => {
         try {
             const hasPermission = await locationService.requestPermission();
-            if (!hasPermission) return DEFAULT_LOCATION;
+            if (!hasPermission) return null;
 
             const location = await Location.getCurrentPositionAsync({
                 accuracy: Location.Accuracy.Balanced,
@@ -36,9 +30,7 @@ export const locationService = {
                 longitude: location.coords.longitude,
             };
         } catch {
-            return DEFAULT_LOCATION;
+            return null;
         }
     },
-
-    getDefaultLocation: (): UserLocation => DEFAULT_LOCATION,
 };

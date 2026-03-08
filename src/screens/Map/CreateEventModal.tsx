@@ -12,6 +12,8 @@ import { useEventsStore } from '../../store/useEventsStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import { Input, InputField } from '@/src/components/ui/input';
+import { foursquareService } from '../../services/foursquareService';
+import { Place } from '../../types';
 
 export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
@@ -24,7 +26,33 @@ export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ ro
     const [category, setCategory] = useState('');
     const [maxParticipants, setMaxParticipants] = useState('10');
     const [locationName, setLocationName] = useState(route?.params?.initialLocation || '');
+    const [latitude, setLatitude] = useState(route?.params?.initialLatitude || -23.3045);
+    const [longitude, setLongitude] = useState(route?.params?.initialLongitude || -51.1696);
     const [isPublic, setIsPublic] = useState(true);
+
+    const [locationSuggestions, setLocationSuggestions] = useState<Place[]>([]);
+    const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+
+    // Call autocomplete when user types
+    const handleLocationSearch = async (text: string) => {
+        setLocationName(text);
+        if (text.length > 2) {
+            setIsSearchingLocation(true);
+            const suggestions = await foursquareService.searchPlacesAutocomplete(text, latitude, longitude);
+            setLocationSuggestions(suggestions);
+        } else {
+            setLocationSuggestions([]);
+            setIsSearchingLocation(false);
+        }
+    };
+
+    const handleSelectLocation = (place: Place) => {
+        setLocationName(place.name);
+        setLatitude(place.latitude);
+        setLongitude(place.longitude);
+        setLocationSuggestions([]);
+        setIsSearchingLocation(false);
+    };
 
     const handleCreate = () => {
         if (!title.trim() || !category || !locationName.trim()) {
@@ -38,8 +66,8 @@ export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ ro
             category,
             date: date.toISOString().split('T')[0],
             time: `${date.getHours().toString().padStart(2, '0')}:${date.getMinutes().toString().padStart(2, '0')}`,
-            latitude: route?.params?.initialLatitude || (-23.3045 + (Math.random() - 0.5) * 0.02),
-            longitude: route?.params?.initialLongitude || (-51.1696 + (Math.random() - 0.5) * 0.02),
+            latitude: latitude,
+            longitude: longitude,
             locationName,
             creatorId: '1',
             maxParticipants: parseInt(maxParticipants, 10) || 10,
@@ -95,17 +123,36 @@ export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ ro
                 </View>
 
                 {/* Location */}
-                <View style={styles.field}>
+                <View style={[styles.field, { zIndex: 10 }]}>
                     <Text style={styles.label}>Local</Text>
                     <Input variant="outline" size="xl" style={styles.inputStyle}>
                         <Ionicons name="location-outline" size={20} color={Colors.textMuted} style={{ marginLeft: 12 }} />
                         <InputField
                             placeholder="Nome do local"
                             value={locationName}
-                            onChangeText={setLocationName}
+                            onChangeText={handleLocationSearch}
                             style={styles.inputField}
                         />
                     </Input>
+
+                    {/* Autocomplete Dropdown */}
+                    {(locationSuggestions.length > 0 || isSearchingLocation) && (
+                        <View style={styles.autocompleteDropdown}>
+                            {locationSuggestions.map(place => (
+                                <TouchableOpacity
+                                    key={place.id}
+                                    style={styles.autocompleteItem}
+                                    onPress={() => handleSelectLocation(place)}
+                                >
+                                    <Ionicons name="location" size={16} color={Colors.primary} style={{ marginRight: 8 }} />
+                                    <View>
+                                        <Text style={styles.autocompleteTitle}>{place.name}</Text>
+                                        <Text style={styles.autocompleteSubtitle}>{place.category} · {place.address}</Text>
+                                    </View>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    )}
                 </View>
 
                 {/* Date & Time */}
@@ -246,10 +293,27 @@ const styles = StyleSheet.create({
         fontSize: 14, fontWeight: '600', color: Colors.text, marginBottom: 8,
     },
     inputStyle: {
-        borderRadius: BorderRadius.lg, borderColor: Colors.border, flexDirection: 'row', alignItems: 'center',
+        borderRadius: BorderRadius.lg, borderColor: Colors.border, flexDirection: 'row', alignItems: 'center', backgroundColor: Colors.background,
     },
     inputField: {
         flex: 1, fontSize: 15, color: Colors.text, paddingHorizontal: 14, paddingVertical: 12,
+    },
+    autocompleteDropdown: {
+        position: 'absolute', top: 80, left: 0, right: 0,
+        backgroundColor: Colors.background, borderRadius: BorderRadius.lg,
+        borderWidth: 1, borderColor: Colors.border, ...Shadows.medium,
+        maxHeight: 200, zIndex: 99,
+        padding: 4,
+    },
+    autocompleteItem: {
+        flexDirection: 'row', alignItems: 'center', padding: 12,
+        borderBottomWidth: 1, borderBottomColor: Colors.border,
+    },
+    autocompleteTitle: {
+        fontSize: 14, fontWeight: '600', color: Colors.text,
+    },
+    autocompleteSubtitle: {
+        fontSize: 12, color: Colors.textSecondary, marginTop: 2,
     },
     dateTimeRow: {
         flexDirection: 'row', gap: 12,

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet, TouchableOpacity, FlatList } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, BorderRadius, Shadows } from '../../config/theme';
@@ -7,11 +7,16 @@ import { CategoryChip } from '../../components/CategoryChip';
 import { CATEGORIES } from '../../data/mockData';
 import { useUserStore } from '../../store/useUserStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { locationService } from '../../services/locationService';
 
 export const SelectCategoriesScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const { user, setSelectedCategories, completeOnboarding } = useUserStore();
     const [selected, setSelected] = useState<string[]>([]);
+
+    useEffect(() => {
+        locationService.requestPermission();
+    }, []);
 
     const toggleCategory = (id: string) => {
         setSelected((prev) =>
