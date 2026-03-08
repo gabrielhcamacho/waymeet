@@ -23,6 +23,10 @@ export interface User {
     lastActive: string;
     currentLat?: number;
     currentLong?: number;
+    // Business fields
+    accountType?: 'personal' | 'business';
+    businessCategory?: string;
+    businessAddress?: string;
 }
 
 export interface Category {
@@ -173,6 +177,14 @@ export interface Place {
     categoryIcons: string[];
     latitude: number;
     longitude: number;
+    website?: string;
+    instagram?: string;
+    phone?: string;
+    menuUrl?: string;
+    hours?: string;
+    popularHours?: string;
+    priceTier?: number;
+    photos?: string[];
 }
 
 export interface ChatMessage {

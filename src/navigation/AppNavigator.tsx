@@ -41,7 +41,7 @@ const ExploreStack = createNativeStackNavigator();
 const ProfileStack = createNativeStackNavigator();
 
 const RadarStackScreen = () => (
-    <RadarStack.Navigator screenOptions={{ headerShown: true, header: () => <AppHeader /> }}>
+    <RadarStack.Navigator id={undefined} screenOptions={{ headerShown: true, header: () => <AppHeader /> }}>
         <RadarStack.Screen name="RadarMain" component={RadarScreen} />
         <RadarStack.Screen name="EventDetail" component={EventDetailScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="CommunityDetail" component={CommunityDetailScreen} options={{ headerShown: false }} />
@@ -51,7 +51,7 @@ const RadarStackScreen = () => (
 );
 
 const MapStackScreen = () => (
-    <MapStack.Navigator screenOptions={{ headerShown: false }}>
+    <MapStack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <MapStack.Screen name="MapMain" component={MapScreen} />
         <MapStack.Screen name="CreateEvent" component={CreateEventModal}
             options={{ presentation: 'modal' }} />
@@ -62,7 +62,7 @@ const MapStackScreen = () => (
 );
 
 const AgoraStackScreen = () => (
-    <AgoraStack.Navigator screenOptions={{ headerShown: false }}>
+    <AgoraStack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <AgoraStack.Screen name="AgoraMain" component={AgoraScreen} />
         <AgoraStack.Screen name="QuickCreate" component={QuickCreateModal}
             options={{ presentation: 'modal' }} />
@@ -75,7 +75,7 @@ const AgoraStackScreen = () => (
 );
 
 const ExploreStackScreen = () => (
-    <ExploreStack.Navigator screenOptions={{ headerShown: false }}>
+    <ExploreStack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <ExploreStack.Screen name="ExploreMain" component={ExploreScreen} />
         <ExploreStack.Screen name="ExploreFilters" component={ExploreFiltersModal} options={{ presentation: 'modal' }} />
         <ExploreStack.Screen name="RouteDetail" component={RouteDetailScreen} />
@@ -88,7 +88,7 @@ const ExploreStackScreen = () => (
 );
 
 const ProfileStackScreen = () => (
-    <ProfileStack.Navigator screenOptions={{ headerShown: false }}>
+    <ProfileStack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <ProfileStack.Screen name="ProfileMain" component={ProfileScreen} />
         <ProfileStack.Screen name="EditProfile" component={EditProfileScreen} />
         <ProfileStack.Screen name="EventDetail" component={EventDetailScreen} />
@@ -132,6 +132,7 @@ const MainTabs = () => {
 
     return (
         <Tab.Navigator
+            id={undefined}
             tabBar={(props) => <CustomTabBar {...props} />}
             screenOptions={{ headerShown: false }}
         >
@@ -145,7 +146,7 @@ const MainTabs = () => {
 };
 
 const AuthStack = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="Welcome" component={WelcomeScreen} />
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Signup" component={SignupScreen} />
@@ -154,7 +155,7 @@ const AuthStack = () => (
 );
 
 const OnboardingStack = () => (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
+    <Stack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <Stack.Screen name="SelectCategories" component={SelectCategoriesScreen} />
     </Stack.Navigator>
 );

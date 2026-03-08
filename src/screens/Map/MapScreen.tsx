@@ -61,7 +61,7 @@ const EventPin = ({ event, isSelected }: { event: WayMeetEvent, isSelected: bool
                 height: isSelected ? 42 : 36,
                 backgroundColor: '#ff5028',
                 borderTopLeftRadius: 21, borderTopRightRadius: 21, borderBottomRightRadius: 21, borderBottomLeftRadius: 2,
-                transform: [{ rotate: '45deg' }],
+                transform: [{ rotate: '-45deg' }],
                 justifyContent: 'center', alignItems: 'center',
                 shadowColor: '#ff5028', shadowOffset: { width: 0, height: isSelected ? 8 : 4 },
                 shadowOpacity: isSelected ? 0.6 : 0.3, shadowRadius: isSelected ? 8 : 4, elevation: isSelected ? 10 : 5,
@@ -165,9 +165,39 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     // Panel Animation
     const panelAnim = useRef(new Animated.Value(0)).current;
 
+    // Minimization State & Animation
+    const [isMinimized, setIsMinimized] = useState(false);
+    const minimizeAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.spring(minimizeAnim, {
+            toValue: isMinimized ? 1 : 0,
+            useNativeDriver: true,
+            friction: 8,
+            tension: 60
+        }).start();
+    }, [isMinimized]);
+
+    const panResponder = useRef(
+        PanResponder.create({
+            onStartShouldSetPanResponder: () => false,
+            onMoveShouldSetPanResponder: (evt, gestureState) => {
+                return Math.abs(gestureState.dy) > 15;
+            },
+            onPanResponderRelease: (evt, gestureState) => {
+                if (gestureState.dy > 30) {
+                    setIsMinimized(true);
+                } else if (gestureState.dy < -30) {
+                    setIsMinimized(false);
+                }
+            }
+        })
+    ).current;
+
     const toggleLayer = (layer: MapLayer) => {
         setActiveLayers(prev => prev.includes(layer) ? prev.filter(l => l !== layer) : [...prev, layer]);
         setSelectedItem(null);
+        setIsMinimized(false);
     };
 
     useEffect(() => {
@@ -236,6 +266,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     const handleSelect = (type: 'event' | 'place' | 'person', data: any, lat: number, lng: number) => {
         setSelectedItem({ type, data });
+        setIsMinimized(false);
         mapRef.current?.animateToRegion({
             latitude: lat - 0.005, // offset slightly below center to fit panel
             longitude: lng,
@@ -279,7 +310,10 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 onRegionChangeComplete={(r) => setRegion(r)}
                 showsUserLocation
                 showsMyLocationButton={false}
-                onPress={() => setSelectedItem(null)} // deselect on map click
+                onPress={() => {
+                    setSelectedItem(null);
+                    setIsMinimized(false);
+                }} // deselect on map click
             >
                 {/* Heatmap Layer for Events/Persons -> mapped as fuzzy circles for performance */}
                 {(activeLayers.includes('eventos') || activeLayers.includes('pessoas')) && MOCK_HEAT_ZONES.map(zone => (
@@ -289,6 +323,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         radius={800 * zone.intensity}
                         fillColor={`rgba(${activeLayers.includes('eventos') ? '255, 80, 40' : '70, 130, 255'}, ${0.15 * zone.intensity})`}
                         strokeWidth={0}
+                         strokeColor="transparent"
                     />
                 ))}
 
@@ -348,7 +383,13 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             {/* Float Action Button & Locate Button (adjust translation when panel is active) */}
             <Animated.View style={[
                 styles.fabLocationContainer,
-                { bottom: insets.bottom + 100, transform: [{ translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -220] }) }] }
+                {
+                    bottom: insets.bottom + 100,
+                    transform: [
+                        { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0, -220] }) },
+                        { translateY: Animated.multiply(minimizeAnim, panelAnim.interpolate({ inputRange: [0, 1], outputRange: [140 + insets.bottom, 220] })) }
+                    ]
+                }
             ]} pointerEvents="box-none">
                 <TouchableOpacity
                     style={styles.locationButton}
@@ -369,11 +410,21 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             {/* -------------------------------------------------------------
                 Descoberta Bottom Sheet (Fallback when no marker selected)
                 ------------------------------------------------------------- */}
-            <Animated.View style={[
-                styles.bottomSheet,
-                { paddingBottom: insets.bottom + 16, transform: [{ translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 400] }) }] }
-            ]}>
-                <View style={styles.dragHandle} />
+            <Animated.View
+                {...panResponder.panHandlers}
+                style={[
+                    styles.bottomSheet,
+                    {
+                        paddingBottom: insets.bottom + 16,
+                        transform: [
+                            { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 500] }) },
+                            { translateY: minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 140 + insets.bottom] }) }
+                        ]
+                    }
+                ]}>
+                <TouchableOpacity onPress={() => setIsMinimized(!isMinimized)} activeOpacity={0.7} style={{ alignSelf: 'stretch', alignItems: 'center', paddingTop: 10, paddingBottom: 10, marginTop: -10 }}>
+                    <View style={[styles.dragHandle, { marginBottom: 0 }]} />
+                </TouchableOpacity>
                 <Text style={styles.sheetTitle}>Perto de você · {events.length} encontros</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
                     {events.slice(0, 5).map(e => (
@@ -396,17 +447,24 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             {/* -------------------------------------------------------------
                 Custom Callout Card (Shows when selectedItem is valid)
                 ------------------------------------------------------------- */}
-            <Animated.View style={[
-                styles.calloutCardOverlay,
-                {
-                    paddingBottom: insets.bottom + 16,
-                    opacity: panelAnim,
-                    pointerEvents: selectedItem ? 'auto' : 'none',
-                    transform: [{ translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [400, 0] }) }]
-                }
-            ]}>
+            <Animated.View
+                {...panResponder.panHandlers}
+                pointerEvents={selectedItem ? 'box-none' : 'none'}
+                style={[
+                    styles.calloutCardOverlay,
+                    {
+                        paddingBottom: insets.bottom + 16,
+                        opacity: panelAnim.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0, 1] }),
+                        transform: [
+                            { translateY: panelAnim.interpolate({ inputRange: [0, 1], outputRange: [500, 0] }) },
+                            { translateY: minimizeAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 230 + insets.bottom] }) }
+                        ]
+                    }
+                ]}>
                 <View style={styles.calloutCardInner}>
-                    <View style={styles.dragHandle} />
+                    <TouchableOpacity onPress={() => setIsMinimized(!isMinimized)} activeOpacity={0.7} style={{ alignSelf: 'stretch', alignItems: 'center', paddingTop: 10, paddingBottom: 10, marginTop: -10 }}>
+                        <View style={[styles.dragHandle, { marginBottom: 0 }]} />
+                    </TouchableOpacity>
 
                     {selectedItem?.type === 'event' && (
                         <>
