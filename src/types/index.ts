@@ -5,6 +5,7 @@ export interface User {
     email: string;
     displayName: string;
     avatarUrl: string;
+    secondaryAvatarSeed?: string;
     coverPhotoUrl: string;
     homeCity: string;
     bio: string;

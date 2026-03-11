@@ -38,6 +38,7 @@ const mapSupabaseUser = (supabaseUser: {
         email: supabaseUser.email || '',
         displayName: meta.display_name || meta.full_name || '',
         avatarUrl: meta.avatar_url || '',
+        secondaryAvatarSeed: meta.secondary_avatar_seed,
         coverPhotoUrl: meta.cover_photo_url || '',
         homeCity: meta.home_city || '',
         bio: meta.bio || '',
@@ -144,6 +145,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
                 data: {
                     display_name: updates.displayName,
                     avatar_url: updates.avatarUrl,
+                    secondary_avatar_seed: updates.secondaryAvatarSeed,
                     cover_photo_url: updates.coverPhotoUrl,
                     home_city: updates.homeCity,
                     bio: updates.bio,
