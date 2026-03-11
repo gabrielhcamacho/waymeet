@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { View, TouchableOpacity, ScrollView, Alert, ImageBackground } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '../../config/theme';
@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Input, InputField } from '@/src/components/ui/input';
 import { CATEGORIES } from '../../data/mockData';
 import * as ImagePicker from 'expo-image-picker';
+import { SvgUri } from 'react-native-svg';
 
 export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
@@ -16,6 +17,7 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
     const [city, setCity] = useState(user?.homeCity || '');
     const [bio, setBio] = useState(user?.bio || '');
     const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+    const [secondaryAvatarSeed, setSecondaryAvatarSeed] = useState(user?.secondaryAvatarSeed || '');
     const [coverPhotoUrl, setCoverPhotoUrl] = useState(user?.coverPhotoUrl || '');
     const [selectedCategories, setSelectedCategories] = useState<string[]>(user?.selectedCategories || []);
 
@@ -51,11 +53,22 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
             homeCity: city,
             bio,
             avatarUrl,
+            secondaryAvatarSeed,
             coverPhotoUrl,
             selectedCategories
         });
         navigation.goBack();
     };
+
+    const generateSecondaryAvatar = () => {
+        const seed = Math.random().toString(36).substring(2, 10);
+        setSecondaryAvatarSeed(seed);
+    };
+
+    const dicebearUrl = useMemo(() => {
+        if (!secondaryAvatarSeed) return null;
+        return `https://api.dicebear.com/9.x/avataaars/svg?seed=${secondaryAvatarSeed}`;
+    }, [secondaryAvatarSeed]);
 
     const handleDelete = () => {
         Alert.alert('Excluir conta', 'Tem certeza? Esta ação não pode ser desfeita.', [
@@ -118,6 +131,33 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                                 <Ionicons name="camera" size={24} color="white" />
                             </View>
                         </TouchableOpacity>
+                    </View>
+                </View>
+
+                {/* Secondary Avatar Section */}
+                <View className="mb-6 items-center">
+                    <Text className="text-sm font-semibold text-text mb-3">Avatar Secundário (DiceBear)</Text>
+                    <View className="flex-row items-center gap-4">
+                        <View className="w-[70px] h-[70px] rounded-full bg-gray-100 items-center justify-center overflow-hidden border-2 border-orange-100">
+                            {dicebearUrl ? (
+                                <SvgUri uri={dicebearUrl} width="100%" height="100%" />
+                            ) : (
+                                <Ionicons name="person" size={35} color={Colors.text} style={{ opacity: 0.3 }} />
+                            )}
+                        </View>
+                        <TouchableOpacity
+                            activeOpacity={0.8}
+                            onPress={generateSecondaryAvatar}
+                            className="flex-row items-center bg-orange-50 px-4 py-2 rounded-full border border-orange-200"
+                        >
+                            <Ionicons name="dice-outline" size={20} color={Colors.primary} />
+                            <Text className="text-primary font-semibold ml-2">Gerar Avatar</Text>
+                        </TouchableOpacity>
+                        {secondaryAvatarSeed ? (
+                            <TouchableOpacity onPress={() => setSecondaryAvatarSeed('')} className="p-2">
+                                <Ionicons name="trash-outline" size={20} color={Colors.error} />
+                            </TouchableOpacity>
+                        ) : null}
                     </View>
                 </View>
 
