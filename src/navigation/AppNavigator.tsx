@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { NavigationContainer } from '@react-navigation/native';
+import { GluestackUIProvider } from '@/src/components/ui/gluestack-ui-provider';
 
 import { WelcomeScreen } from '../screens/Auth/WelcomeScreen';
 import { LoginScreen } from '../screens/Auth/LoginScreen';
@@ -53,8 +54,7 @@ const RadarStackScreen = () => (
 const MapStackScreen = () => (
     <MapStack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <MapStack.Screen name="MapMain" component={MapScreen} />
-        <MapStack.Screen name="CreateEvent" component={CreateEventModal}
-            options={{ presentation: 'modal' }} />
+        <MapStack.Screen name="CreateEvent" component={CreateEventModal} options={{ presentation: 'modal' }} />
         <MapStack.Screen name="EventDetail" component={EventDetailScreen} />
         <MapStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <MapStack.Screen name="Chat" component={ChatScreen} />
@@ -64,8 +64,7 @@ const MapStackScreen = () => (
 const AgoraStackScreen = () => (
     <AgoraStack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <AgoraStack.Screen name="AgoraMain" component={AgoraScreen} />
-        <AgoraStack.Screen name="QuickCreate" component={QuickCreateModal}
-            options={{ presentation: 'modal' }} />
+        <AgoraStack.Screen name="QuickCreate" component={QuickCreateModal} options={{ presentation: 'modal' }} />
         <AgoraStack.Screen name="EventDetail" component={EventDetailScreen} />
         <AgoraStack.Screen name="ActivityDetail" component={ActivityDetailScreen} />
         <AgoraStack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
@@ -103,11 +102,9 @@ const MainTabs = () => {
     const { setActivities } = useActivityFeedStore();
 
     useEffect(() => {
-        // Initialize mock data
         setActiveUsers(MOCK_PRESENCE_USERS);
         setActivities(MOCK_ACTIVITY_FEED);
 
-        // Request location permission immediately on mount
         locationService.requestPermission().then(async (hasPermission) => {
             if (hasPermission) {
                 try {
@@ -117,13 +114,10 @@ const MainTabs = () => {
             }
         });
 
-        // Heartbeat: update presence every 30s
         const interval = setInterval(async () => {
             try {
                 const loc = await locationService.getCurrentLocation();
-                if (loc) {
-                    heartbeat(loc.latitude, loc.longitude);
-                }
+                if (loc) heartbeat(loc.latitude, loc.longitude);
             } catch { /* location unavailable */ }
         }, 30 * 1000);
 
@@ -165,13 +159,17 @@ export const AppNavigator: React.FC = () => {
 
     return (
         <NavigationContainer>
-            {authStatus !== 'authenticated' ? (
-                <AuthStack />
-            ) : !hasCompletedOnboarding ? (
-                <OnboardingStack />
-            ) : (
-                <MainTabs />
-            )}
+            {/* GluestackUIProvider INSIDE NavigationContainer so its
+                components (Text, Input, etc.) always have navigation context */}
+            <GluestackUIProvider mode="light">
+                {authStatus !== 'authenticated' ? (
+                    <AuthStack />
+                ) : !hasCompletedOnboarding ? (
+                    <OnboardingStack />
+                ) : (
+                    <MainTabs />
+                )}
+            </GluestackUIProvider>
         </NavigationContainer>
     );
 };
