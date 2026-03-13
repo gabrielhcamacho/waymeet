@@ -1,31 +1,30 @@
 import React from "react";
-import { View, TouchableOpacity, Text } from "react-native";
+import { View } from "react-native";
+import { Button, ButtonText } from "@/src/components/ui/button";
 
 interface TabSwitcherProps {
     activeTab: "info" | "avatar";
     onTabChange: (tab: 'info' | 'avatar') => void;
-};
+}
 
 export const TabSwitcher: React.FC<TabSwitcherProps> = ({ activeTab, onTabChange }) => (
-    <View className="flex-row mb-2 bg-gray-100 p-1 rounded-xl">
+    <View className="flex-row mb-2 bg-gray-100 p-1 rounded-xl gap-1">
         {(['info', 'avatar'] as const).map((tab) => {
-            const label = tab === 'info' ? 'Informações' : 'Avatar';
             const isActive = activeTab === tab;
+            const label = tab === 'info' ? 'Informações' : 'Avatar';
             return (
-                <TouchableOpacity
+                <Button
                     key={tab}
-                    className={`flex-1 py-2 items-center rounded-lg ${isActive ? 'bg-white shadow-sm' : ''}`}
                     onPress={() => onTabChange(tab)}
+                    className={`flex-1 rounded-lg h-9 ${isActive ? 'bg-white' : 'bg-transparent'}`}
+                    variant="solid"
                 >
-                    <Text
-                        style={{
-                            fontWeight: '600',
-                            color: isActive ? '#111827' : '#6B7280',
-                        }}
+                    <ButtonText
+                        className={`text-sm font-semibold ${isActive ? 'text-gray-900' : 'text-gray-500'}`}
                     >
                         {label}
-                    </Text>
-                </TouchableOpacity>
+                    </ButtonText>
+                </Button>
             );
         })}
     </View>

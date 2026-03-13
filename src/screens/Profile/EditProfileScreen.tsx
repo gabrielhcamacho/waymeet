@@ -153,25 +153,28 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                         </TouchableOpacity>
                     </>
                 ) : (
-                    <View className="mt-6 mb-8">
-                        <AvatarPreview
-                            dicebearUrl={dicebearUrl}
-                            onRandomize={() =>
-                                setAvatarConfig({ seed: Math.random().toString(36).substring(2, 10) })
-                            }
-                        />
-                        {(Object.keys(AVATAR_OPTIONS) as (keyof typeof AVATAR_OPTIONS)[]).map((cat) => (
-                            <AvatarOptionRow
-                                key={cat}
-                                category={cat}
-                                options={AVATAR_OPTIONS[cat]}
-                                selectedValue={avatarConfig[cat]}
-                                onSelect={(key, val) =>
-                                    setAvatarConfig((prev) => ({ ...prev, [key]: val }))
+                    <>
+                        <View className="mt-6 mb-8">
+                            <AvatarPreview
+                                dicebearUrl={dicebearUrl}
+                                onRandomize={() =>
+                                    setAvatarConfig({ seed: Math.random().toString(36).substring(2, 10) })
                                 }
                             />
-                        ))}
-                    </View>
+                            {(Object.keys(AVATAR_OPTIONS) as (keyof typeof AVATAR_OPTIONS)[]).map((cat) => (
+                                <AvatarOptionRow
+                                    key={cat}
+                                    category={cat}
+                                    options={AVATAR_OPTIONS[cat]}
+                                    selectedValue={avatarConfig[cat]}
+                                    onSelect={(key, val) =>
+                                        setAvatarConfig((prev) => ({ ...prev, [key]: val }))
+                                    }
+                                />
+                            ))}
+                        </View>
+                    </>
+
                 )}
             </ScrollView>
         </View>
