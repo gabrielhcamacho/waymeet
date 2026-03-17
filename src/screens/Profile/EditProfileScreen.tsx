@@ -11,16 +11,8 @@ import { AvatarPreview } from './components/AvatarPreview';
 import { AvatarOptionRow } from './components/AvatarOptionRow';
 import { CategorySelector } from './components/CategorySelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { View, TouchableOpacity, ScrollView, Alert, ImageBackground } from 'react-native';
-
-const AVATAR_OPTIONS = {
-    top: ['longHair', 'shortHair', 'eyepatch', 'hat', 'hijab', 'turban', 'winterHat1', 'winterHat2', 'winterHat3', 'winterHat4', 'bob', 'bun', 'curly', 'curvy', 'dreads', 'frida', 'fro', 'froBand', 'miaWallace', 'shaggy', 'shaggyMullet', 'shavedSides', 'shortCurly', 'shortFlat', 'shortRound', 'shortWaved', 'straight01', 'straight02', 'straightAndStrand'],
-    hairColor: ['2c1b18', '4a3123', '724133', 'a55728', 'b58143', 'c93305', 'd6b370', 'e8e1e1', 'ecdcbf', 'f59797'],
-    eyes: ['close', 'cry', 'default', 'dizzy', 'eyeRoll', 'happy', 'hearts', 'side', 'squint', 'surprised', 'wink', 'winkWacky'],
-    mouth: ['concerned', 'default', 'disbelief', 'eating', 'grimace', 'sad', 'screamOpen', 'serious', 'smile', 'smirk', 'spit', 'twinkle', 'vomit'],
-    skinColor: ['614335', 'ae5d29', 'd08b5b', 'edb98a', 'f8d25c', 'fd9841', 'ffdbb4'],
-    clothes: ['blazerAndShirt', 'blazerAndSweater', 'collarAndSweater', 'graphicShirt', 'hoodie', 'overall', 'shirtCrewNeck', 'shirtScoopNeck', 'shirtVNeck'],
-} as const;
+import { View, TouchableOpacity, ScrollView, Alert } from 'react-native';
+import { AVATAR_OPTIONS } from '@/src/utils/avatarConfig';
 
 type AvatarConfig = Record<string, string> & { seed: string };
 
@@ -33,9 +25,50 @@ function parseSeed(seedStr: string): AvatarConfig {
         });
         if (!obj.seed) obj.seed = Math.random().toString(36).substring(2, 10);
         return obj as AvatarConfig;
-    };
-    return { seed: seedStr || Math.random().toString(36).substring(2, 10) }
-};
+    }
+    return { seed: seedStr || Math.random().toString(36).substring(2, 10) };
+}
+
+/**
+ * Builds a valid DiceBear v9 avataaars URL from the stored config.
+ * Each option category maps to a single query-string param with the chosen value.
+ * Optional features (facialHair, accessories) set their probability to 100
+ * when explicitly chosen, or 0 when absent.
+ */
+function buildDicebearUrl(config: AvatarConfig): string {
+    const params = new URLSearchParams();
+
+    // Seed is always present
+    params.set('seed', config.seed ?? Math.random().toString(36).substring(2, 10));
+
+    const directKeys = [
+        'top', 'eyes', 'eyebrows', 'mouth',
+        'clothing', 'clothesColor', 'clothingGraphic',
+        'hairColor', 'skinColor', 'hatColor', 'facialHairColor',
+    ];
+
+    for (const key of directKeys) {
+        if (config[key]) params.set(key, config[key]);
+    }
+
+    // facialHair: must also set probability so it always shows
+    if (config.facialHair) {
+        params.set('facialHair', config.facialHair);
+        params.set('facialHairProbability', '100');
+    } else {
+        params.set('facialHairProbability', '0');
+    }
+
+    // accessories: must also set probability so it always shows
+    if (config.accessories) {
+        params.set('accessories', config.accessories);
+        params.set('accessoriesProbability', '100');
+    } else {
+        params.set('accessoriesProbability', '0');
+    }
+
+    return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
+}
 
 function serializeConfig(config: AvatarConfig): string {
     return Object.entries(config)
@@ -60,10 +93,7 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
         parseSeed(user?.secondaryAvatarSeed || ''),
     );
 
-    const dicebearUrl = useMemo(() => {
-        const params = serializeConfig(avatarConfig);
-        return `https://api.dicebear.com/9.x/avataaars/svg?${params}`;
-    }, [avatarConfig]);
+    const dicebearUrl = useMemo(() => buildDicebearUrl(avatarConfig), [avatarConfig]);
 
     const toggleCategory = (id: string) =>
         setSelectedCategories((prev) =>
@@ -153,28 +183,37 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                         </TouchableOpacity>
                     </>
                 ) : (
-                    <>
-                        <View className="mt-6 mb-8">
-                            <AvatarPreview
-                                dicebearUrl={dicebearUrl}
-                                onRandomize={() =>
-                                    setAvatarConfig({ seed: Math.random().toString(36).substring(2, 10) })
-                                }
-                            />
-                            {(Object.keys(AVATAR_OPTIONS) as (keyof typeof AVATAR_OPTIONS)[]).map((cat) => (
+                    <View className="mt-6 mb-8">
+                        <AvatarPreview
+                            dicebearUrl={dicebearUrl}
+                            onRandomize={() =>
+                                setAvatarConfig({ seed: Math.random().toString(36).substring(2, 10) })
+                            }
+                        />
+                        {(Object.keys(AVATAR_OPTIONS)).map((cat) => {
+                            const isOptional = cat === 'facialHair' || cat === 'accessories';
+                            return (
                                 <AvatarOptionRow
                                     key={cat}
                                     category={cat}
                                     options={AVATAR_OPTIONS[cat]}
                                     selectedValue={avatarConfig[cat]}
+                                    optional={isOptional}
                                     onSelect={(key, val) =>
-                                        setAvatarConfig((prev) => ({ ...prev, [key]: val }))
+                                        setAvatarConfig((prev) => {
+                                            // Toggle off optional categories when re-clicking
+                                            if (isOptional && prev[key] === val) {
+                                                const next = { ...prev };
+                                                delete next[key];
+                                                return next;
+                                            }
+                                            return { ...prev, [key]: val };
+                                        })
                                     }
                                 />
-                            ))}
-                        </View>
-                    </>
-
+                            );
+                        })}
+                    </View>
                 )}
             </ScrollView>
         </View>
