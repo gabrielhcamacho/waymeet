@@ -198,7 +198,6 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                                     category={cat}
                                     options={AVATAR_OPTIONS[cat]}
                                     selectedValue={avatarConfig[cat]}
-                                    optional={isOptional}
                                     onSelect={(key, val) =>
                                         setAvatarConfig((prev) => {
                                             // Toggle off optional categories when re-clicking
