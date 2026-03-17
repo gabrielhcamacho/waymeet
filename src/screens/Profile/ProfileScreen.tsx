@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { View, ScrollView, TouchableOpacity, ImageBackground, Modal, Animated, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../../config/theme';
@@ -12,6 +12,7 @@ import { useEventsStore } from '../../store/useEventsStore';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MOCK_COMMUNITIES, CATEGORIES } from '../../data/mockData';
 import { Input, InputField } from '@/src/components/ui/input';
+import { Image } from 'expo-image';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,6 +27,115 @@ const INTEREST_NAMES: Record<string, string> = {
     '6': 'Cultural', '7': 'Rural', '8': 'Verão', '9': 'Esportes', '10': 'Música',
     '11': 'Ecotour', '12': 'Gastronomia', '13': 'Encontros', '14': 'Business',
 };
+
+const FlipAvatar: React.FC<{
+    avatarUrl: string;
+    dicebearSeed: string
+}> = ({ avatarUrl, dicebearSeed }) => {
+    const [showingDicebear, setShowingDicebear] = useState(false);
+    const flipAnim = useRef(new Animated.Value(0)).current;
+
+    const dicebearUrl = dicebearSeed
+        ? `https://api.dicebear.com/9.x/avataaars/svg?${dicebearSeed}`
+        : null;
+
+    const frontInterpolate = flipAnim.interpolate({
+        inputRange: [0, 180],
+        outputRange: ['0deg', '180deg'],
+    });
+
+    const backInterpolate = flipAnim.interpolate({
+        inputRange: [0, 180],
+        outputRange: ['180deg', '360deg'],
+    });
+
+    const frontOpacity = flipAnim.interpolate({
+        inputRange: [89, 90],
+        outputRange: [1, 0],
+    });
+
+    const backOpacity = flipAnim.interpolate({
+        inputRange: [89, 90],
+        outputRange: [0, 1],
+    });
+
+    const handleFlip = () => {
+        const toValue = showingDicebear ? 0 : 180;
+        Animated.spring(flipAnim, {
+            toValue,
+            friction: 8,
+            tension: 10,
+            useNativeDriver: true,
+        }).start();
+        setShowingDicebear(!showingDicebear);
+    };
+
+    return (
+        <TouchableOpacity onPress={handleFlip} activeOpacity={1}>
+            <View style={{ width: 90, height: 90 }}>
+                {/* Frente — foto real */}
+                <Animated.View
+                    style={{
+                        position: 'absolute',
+                        width: 90,
+                        height: 90,
+                        borderRadius: 45,
+                        backfaceVisibility: 'hidden',
+                        transform: [{ perspective: 800 }, { rotateY: frontInterpolate }],
+                        opacity: frontOpacity,
+                        overflow: 'hidden',
+                        borderWidth: 4,
+                        borderColor: 'white',
+                        ...Shadows.medium,
+                    }}
+                >
+                    <ImageBackground
+                        source={{ uri: avatarUrl || 'https://via.placeholder.com/100' }}
+                        style={{ width: '100%', height: '100%', backgroundColor: '#F3F4F6' }}
+                        imageStyle={{ borderRadius: 45 }}
+                    />
+                </Animated.View>
+
+                {/* Verso — DiceBear avatar */}
+                <Animated.View
+                    style={{
+                        position: 'absolute',
+                        width: 90,
+                        height: 90,
+                        borderRadius: 45,
+                        backfaceVisibility: 'hidden',
+                        transform: [{ perspective: 800 }, { rotateY: backInterpolate }],
+                        opacity: backOpacity,
+                        overflow: 'hidden',
+                        borderWidth: 4,
+                        borderColor: '#FED7AA',
+                        backgroundColor: '#FFF7ED',
+                        ...Shadows.medium,
+                    }}
+                >
+                    {dicebearUrl ? (
+                        <Image
+                            source={{ uri: dicebearUrl }}
+                            style={{ width: '100%', height: '100%' }}
+                            contentFit="contain"
+                        />
+                    ) : (
+                        <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+                            <Ionicons name="person" size={40} color="#D1D5DB" />
+                        </View>
+                    )}
+                </Animated.View>
+            </View>
+
+            {/* Hint
+            <View style={{ alignItems: 'center', marginTop: 4 }}>
+                <Text className="text-[10px] text-gray-400">
+                    {showingDicebear ? '← foto' : 'avatar →'}
+                </Text>
+            </View> */}
+        </TouchableOpacity>
+    );
+}
 
 export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
@@ -99,16 +209,11 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
                 {/* Avatar & Info */}
                 <View className="items-center px-5 -mt-[45px]">
-                    <View
-                        className="w-[90px] h-[90px] rounded-full border-4 border-white mb-3 overflow-hidden"
-                        style={Shadows.medium}
-                    >
-                        <ImageBackground
-                            source={{ uri: user?.avatarUrl || 'https://via.placeholder.com/100' }}
-                            className="w-full h-full bg-gray-100"
-                            imageStyle={{ borderRadius: 45 }}
-                        />
-                    </View>
+                    <FlipAvatar
+                        avatarUrl={user?.avatarUrl || ''}
+                        dicebearSeed={user?.secondaryAvatarSeed || ''}
+                    />
+
                     <Text className="text-2xl font-bold text-gray-900">{user?.displayName || 'User'}</Text>
 
                     {/* Mode & Reputation */}
