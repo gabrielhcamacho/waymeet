@@ -3,7 +3,7 @@ import { View, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Text } from '@/src/components/ui/text';
-import { Colors } from '../../../config/theme';
+import { Colors } from '../../../../config/theme';
 
 interface AvatarPreviewProps {
     dicebearUrl: string | null;

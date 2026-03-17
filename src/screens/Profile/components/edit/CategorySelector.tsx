@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
 import { Text } from '@/src/components/ui/text';
-import { CATEGORIES } from '../../../data/mockData';
+import { CATEGORIES } from '../../../../data/mockData';
 
 interface CategorySelectorProps {
     selectedCategories: string[];
