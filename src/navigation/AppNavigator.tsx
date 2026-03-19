@@ -24,6 +24,7 @@ import { EventDetailScreen } from '../screens/Events/EventDetailScreen';
 import { ChatScreen } from '../screens/Chat/ChatScreen';
 import { ProfileScreen } from '../screens/Profile/ProfileScreen';
 import { EditProfileScreen } from '../screens/Profile/EditProfileScreen';
+import { PublicProfileScreen } from '../screens/Profile/PublicProfileScreen';
 import { ExploreFiltersModal } from '../screens/Home/ExploreFiltersModal';
 import { CustomTabBar } from '../components/CustomTabBar';
 import { useUserStore } from '../store/useUserStore';
@@ -48,6 +49,7 @@ const RadarStackScreen = () => (
         <RadarStack.Screen name="CommunityDetail" component={CommunityDetailScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
+        <RadarStack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ headerShown: false }} />
     </RadarStack.Navigator>
 );
 
@@ -58,6 +60,7 @@ const MapStackScreen = () => (
         <MapStack.Screen name="EventDetail" component={EventDetailScreen} />
         <MapStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <MapStack.Screen name="Chat" component={ChatScreen} />
+        <MapStack.Screen name="PublicProfile" component={PublicProfileScreen} />
     </MapStack.Navigator>
 );
 
@@ -70,6 +73,7 @@ const AgoraStackScreen = () => (
         <AgoraStack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
         <AgoraStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <AgoraStack.Screen name="Chat" component={ChatScreen} />
+        <AgoraStack.Screen name="PublicProfile" component={PublicProfileScreen} />
     </AgoraStack.Navigator>
 );
 
@@ -83,6 +87,7 @@ const ExploreStackScreen = () => (
         <ExploreStack.Screen name="Comunidade" component={CommunityScreen} />
         <ExploreStack.Screen name="EventDetail" component={EventDetailScreen} />
         <ExploreStack.Screen name="Chat" component={ChatScreen} />
+        <ExploreStack.Screen name="PublicProfile" component={PublicProfileScreen} />
     </ExploreStack.Navigator>
 );
 
@@ -94,6 +99,7 @@ const ProfileStackScreen = () => (
         <ProfileStack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
         <ProfileStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <ProfileStack.Screen name="Chat" component={ChatScreen} />
+        <ProfileStack.Screen name="PublicProfile" component={PublicProfileScreen} />
     </ProfileStack.Navigator>
 );
 
