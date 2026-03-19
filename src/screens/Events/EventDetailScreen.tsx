@@ -148,14 +148,18 @@ export const EventDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
                         </View>
                         <View style={styles.attendeesList}>
                             {liveEvent.attendees.map((attendee: any, index: number) => (
-                                <View key={index} style={styles.attendeeItem}>
+                                <TouchableOpacity 
+                                    key={index} 
+                                    style={styles.attendeeItem}
+                                    onPress={() => navigation.navigate('PublicProfile', { user: attendee })}
+                                >
                                     <ImageBackground
                                         source={{ uri: attendee.avatarUrl }}
                                         style={styles.attendeeAvatar}
                                         imageStyle={{ borderRadius: 18 }}
                                     />
                                     <Text style={styles.attendeeName}>{attendee.displayName}</Text>
-                                </View>
+                                </TouchableOpacity>
                             ))}
                         </View>
                     </View>

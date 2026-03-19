@@ -54,8 +54,10 @@ export const ChatScreen: React.FC<{ route: any; navigation: any }> = ({ route, n
         return (
             <View style={[styles.messageRow, isMe && styles.messageRowMe]}>
                 {!isMe && (
-                    <ImageBackground source={{ uri: item.user.avatarUrl }}
-                        style={styles.messageAvatar} imageStyle={{ borderRadius: 16 }} />
+                    <TouchableOpacity onPress={() => navigation.navigate('PublicProfile', { user: item.user })}>
+                        <ImageBackground source={{ uri: item.user.avatarUrl }}
+                            style={styles.messageAvatar} imageStyle={{ borderRadius: 16 }} />
+                    </TouchableOpacity>
                 )}
                 <View style={[styles.messageBubble, isMe ? styles.bubbleMe : styles.bubbleOther]}>
                     {!isMe && <Text style={styles.senderName}>{item.user.displayName}</Text>}
