@@ -11,13 +11,20 @@ interface Event {
 }
 
 interface ProfileTabsProps {
-    activeTab: 'eventos' | 'sobre';
-    onTabChange: (tab: 'eventos' | 'sobre') => void;
+    activeTab: 'eventos' | 'participacoes' | 'sobre';
+    onTabChange: (tab: 'eventos' | 'participacoes' | 'sobre') => void;
     events: Event[];
+    participatedEvents: Event[];
     bio: string;
     homeCity: string;
     onEventPress: (event: Event) => void;
-}
+};
+
+const TABS: { key: 'eventos' | 'participacoes' | 'sobre'; label: string }[] = [
+    { key: 'eventos', label: 'Encontros' },
+    { key: 'participacoes', label: 'Encontros Participados' },
+    { key: 'sobre', label: 'Sobre' },
+];
 
 export const ProfileTabs: React.FC<ProfileTabsProps> = ({
     activeTab,
@@ -25,18 +32,19 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
     events,
     bio,
     homeCity,
+    participatedEvents,
     onEventPress,
 }) => (
     <>
         <View className="flex-row border-b border-gray-100 mt-6 mx-5">
-            {(['eventos', 'sobre'] as const).map((tab) => (
+            {TABS.map((tab) => (
                 <TouchableOpacity
-                    key={tab}
-                    className={`flex-1 items-center py-3 ${activeTab === tab ? 'border-b-2 border-orange-500' : ''}`}
-                    onPress={() => onTabChange(tab)}
+                    key={tab.key}
+                    className={`flex-1 items-center py-3 ${activeTab === tab.key ? "border-b-2 border-orange-500" : ""}`}
+                    onPress={() => onTabChange(tab.key)}
                 >
-                    <Text className={`text-sm font-medium ${activeTab === tab ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
-                        {tab === 'eventos' ? 'Encontros' : 'Sobre'}
+                    <Text className={`text-xs font-medium ${activeTab === tab.key ? 'text-orange-500 font-bold' : 'text-gray-400'}`}>
+                        {tab.label}
                     </Text>
                 </TouchableOpacity>
             ))}
@@ -46,20 +54,31 @@ export const ProfileTabs: React.FC<ProfileTabsProps> = ({
             {activeTab === 'eventos' && (
                 <>
                     {events.map((event) => (
-                        <EventCard
-                            key={event.id}
-                            event={event}
-                            onPress={() => onEventPress(event)}
-                        />
+                        <EventCard key={event.id} event={event} onPress={() => onEventPress(event)} />
                     ))}
                     {events.length === 0 && (
                         <View className="items-center py-10 gap-3">
                             <Ionicons name="calendar-outline" size={48} color="#9CA3AF" />
-                            <Text className="text-sm text-gray-400">Nenhum encontro ainda</Text>
+                            <Text className="text-sm text-gray-400">Nenhum encontro criado ainda</Text>
                         </View>
                     )}
                 </>
             )}
+
+            {activeTab === 'participacoes' && (
+                <>
+                    {participatedEvents.map((event) => (
+                        <EventCard key={event.id} event={event} onPress={() => onEventPress(event)} />
+                    ))}
+                    {participatedEvents.length === 0 && (
+                        <View className="items-center py-10 gap-3">
+                            <Ionicons name="people-outline" size={48} color="#9CA3AF" />
+                            <Text className="text-sm text-gray-400">Nenhuma participação ainda</Text>
+                        </View>
+                    )}
+                </>
+            )}
+
             {activeTab === 'sobre' && (
                 <View className="gap-4">
                     <View>

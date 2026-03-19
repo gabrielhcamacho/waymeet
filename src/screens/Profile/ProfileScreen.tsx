@@ -19,7 +19,7 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
     const { user, logout, updateProfile } = useUserStore();
     const { events } = useEventsStore();
 
-    const [activeTab, setActiveTab] = useState<'eventos' | 'sobre'>('eventos');
+    const [activeTab, setActiveTab] = useState<'eventos' | 'participacoes' | 'sobre'>('eventos');
     const [isMenuVisible, setIsMenuVisible] = useState(false);
     const [slideAnim] = useState(new Animated.Value(width));
     const [businessState, setBusinessState] = useState({
@@ -40,6 +40,10 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
     const userEvents = events.filter((e) => e.creatorId === user?.id || e.creatorId === '1');
     const userCommunities = MOCK_COMMUNITIES.slice(0, 4);
+
+    const participatedEvents = events.filter(
+        (e) => e.creatorId !== user?.id && e.creatorId !== '1'
+    );
 
     return (
         <View className="flex-1 bg-white">
@@ -71,6 +75,7 @@ export const ProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                     activeTab={activeTab}
                     onTabChange={setActiveTab}
                     events={userEvents}
+                    participatedEvents={participatedEvents}
                     bio={user?.bio || ''}
                     homeCity={user?.homeCity || ''}
                     onEventPress={(event) => navigation.navigate('EventDetail', { event })}
