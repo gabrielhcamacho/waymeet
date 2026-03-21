@@ -12,6 +12,7 @@ import { SelectCategoriesScreen } from '../screens/Onboarding/SelectCategoriesSc
 import { RadarScreen } from '../screens/Radar/RadarScreen';
 import { MapScreen } from '../screens/Map/MapScreen';
 import { CreateEventModal } from '../screens/Map/CreateEventModal';
+import { MapFilterScreen } from '../screens/Map/MapFilterScreen';
 import { AgoraScreen } from '../screens/Agora/AgoraScreen';
 import { ActivityDetailScreen } from '../screens/Agora/ActivityDetailScreen';
 import { QuickCreateModal } from '../screens/Agora/QuickCreateModal';
@@ -57,6 +58,7 @@ const MapStackScreen = () => (
     <MapStack.Navigator id={undefined} screenOptions={{ headerShown: false }}>
         <MapStack.Screen name="MapMain" component={MapScreen} />
         <MapStack.Screen name="CreateEvent" component={CreateEventModal} options={{ presentation: 'modal' }} />
+        <MapStack.Screen name="MapFilter" component={MapFilterScreen} options={{ presentation: 'modal' }} />
         <MapStack.Screen name="EventDetail" component={EventDetailScreen} />
         <MapStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <MapStack.Screen name="Chat" component={ChatScreen} />

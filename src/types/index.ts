@@ -71,6 +71,7 @@ export interface HeatZone {
     latitude: number;
     longitude: number;
     activityCount: number;
+    city?: string;
 }
 
 export interface WayMeetEvent {

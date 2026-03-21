@@ -16,13 +16,19 @@ const LAYERS: LayerConfig[] = [
     { key: 'rotas', label: 'Rotas', color: '#9ca3af' },
 ];
 
+import { useMapFilterStore, selectTotalActiveFilters } from '@/src/store/useMapFilterStore';
+import { Ionicons } from '@expo/vector-icons';
+
 interface MapLayerChipsProps {
     activeLayers: MapLayer[];
     onToggle: (layer: MapLayer) => void;
     counts: Record<string, number>;
+    onOpenFilters: () => void;
 }
 
-export const MapLayerChips: React.FC<MapLayerChipsProps> = ({ activeLayers, onToggle, counts }) => {
+export const MapLayerChips: React.FC<MapLayerChipsProps> = ({ activeLayers, onToggle, counts, onOpenFilters }) => {
+    const totalActiveFilters = useMapFilterStore(selectTotalActiveFilters);
+
     return (
         <ScrollView
             horizontal
@@ -65,6 +71,30 @@ export const MapLayerChips: React.FC<MapLayerChipsProps> = ({ activeLayers, onTo
                         </TouchableOpacity>
                     );
                 })}
+
+                {/* Global Filters Chip */}
+                <TouchableOpacity
+                    onPress={onOpenFilters}
+                    activeOpacity={0.7}
+                    style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: totalActiveFilters > 0 ? 'rgba(255, 200, 50, 0.15)' : '#F3F4F6',
+                        borderColor: totalActiveFilters > 0 ? 'rgba(255, 200, 50, 0.4)' : '#E5E7EB',
+                        borderWidth: 1,
+                        borderRadius: 100,
+                        paddingVertical: 8,
+                        paddingHorizontal: 12,
+                        marginLeft: 4,
+                    }}
+                >
+                    <Ionicons name="options" size={16} color={totalActiveFilters > 0 ? '#ffc832' : '#6B7280'} />
+                    {totalActiveFilters > 0 && (
+                        <View style={{ backgroundColor: '#ffc832', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2, marginLeft: 6 }}>
+                            <Text style={{ fontSize: 10, fontWeight: 'bold', color: '#1F2937' }}>{totalActiveFilters}</Text>
+                        </View>
+                    )}
+                </TouchableOpacity>
             </View>
         </ScrollView>
     );

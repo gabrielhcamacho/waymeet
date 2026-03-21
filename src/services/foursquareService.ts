@@ -93,7 +93,7 @@ export const foursquareService = {
                     if (cat.includes('parque') || cat.includes('praça') || cat.includes('park') || cat.includes('nature') || cat.includes('beach')) return '🌳';
                     if (cat.includes('museu') || cat.includes('arte') || cat.includes('museum') || cat.includes('history')) return '🏛️';
                     if (cat.includes('mirante') || cat.includes('vista') || cat.includes('scenic')) return '🏔️';
-                    if (cat.includes('café') || cat.includes('coffee') || cat.includes('bakery')) return '☕';
+                    if (cat.includes('café') || cat.includes('coffee') || cat.includes('bakery') || cat.includes('padaria')) return '☕';
                     if (cat.includes('clube') || cat.includes('festa') || cat.includes('balada') || cat.includes('nightclub') || cat.includes('music')) return '🎉';
                     if (cat.includes('shopping') || cat.includes('mall') || cat.includes('store') || cat.includes('loja')) return '🛍️';
                     if (cat.includes('gym') || cat.includes('academia') || cat.includes('fitness')) return '💪';

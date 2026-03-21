@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions, Platform, Linking, ActivityIndicator, Animated, Image, ScrollView, PanResponder } from 'react-native';
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
@@ -15,29 +15,16 @@ import { WayMeetEvent, MapLayer, Place, PresenceUser } from '../../types';
 import { MOCK_PRESENCE_USERS, MOCK_HEAT_ZONES } from '../../data/mockData';
 import { usePresenceStore } from '../../store/usePresenceStore';
 import { foursquareService } from '../../services/foursquareService';
+import { useMapFilterStore } from '../../store/useMapFilterStore';
 import Supercluster from 'supercluster';
 
 const { width, height } = Dimensions.get('window');
 
 // -------------------------------------------------------------
-// Helper: Event Pin (Teardrop)
+// Helper: Event Pin (Teardrop) — FULLY STATIC, no isSelected
 // -------------------------------------------------------------
-const EventPin = ({ event, isSelected }: { event: WayMeetEvent, isSelected: boolean }) => {
-    const pulseAnim = useRef(new Animated.Value(0)).current;
-
-    // Check if event is starting today or active (mock active logic)
+const EventPin = React.memo(({ event }: { event: WayMeetEvent }) => {
     const isAgora = event.title.toLowerCase().includes('agora') || event.category === 'Sports';
-
-    useEffect(() => {
-        if (isAgora) {
-            Animated.loop(
-                Animated.sequence([
-                    Animated.timing(pulseAnim, { toValue: 1, duration: 2000, useNativeDriver: true }),
-                    Animated.timing(pulseAnim, { toValue: 0, duration: 0, useNativeDriver: true })
-                ])
-            ).start();
-        }
-    }, [isAgora]);
 
     const getEmoji = (cat: string) => {
         if (cat === 'Sports') return '⚽';
@@ -50,44 +37,60 @@ const EventPin = ({ event, isSelected }: { event: WayMeetEvent, isSelected: bool
     return (
         <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
             {isAgora && (
-                <Animated.View style={{
-                    position: 'absolute', width: 50, height: 50, borderRadius: 25, backgroundColor: '#ff5028',
-                    opacity: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.6, 0] }),
-                    transform: [{ scale: pulseAnim.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1.5] }) }]
+                <View style={{
+                    position: 'absolute', width: 44, height: 44, borderRadius: 22,
+                    backgroundColor: 'rgba(255, 80, 40, 0.25)',
                 }} />
             )}
             <View style={{
-                width: isSelected ? 42 : 36,
-                height: isSelected ? 42 : 36,
+                width: 36, height: 36,
                 backgroundColor: '#ff5028',
                 borderTopLeftRadius: 21, borderTopRightRadius: 21, borderBottomRightRadius: 21, borderBottomLeftRadius: 2,
                 transform: [{ rotate: '-45deg' }],
                 justifyContent: 'center', alignItems: 'center',
-                shadowColor: '#ff5028', shadowOffset: { width: 0, height: isSelected ? 8 : 4 },
-                shadowOpacity: isSelected ? 0.6 : 0.3, shadowRadius: isSelected ? 8 : 4, elevation: isSelected ? 10 : 5,
-                borderColor: '#ffffff',
-                borderWidth: isSelected ? 2 : 1
+                shadowColor: '#ff5028', shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3, shadowRadius: 4, elevation: 5,
+                borderColor: '#ffffff', borderWidth: 1
             }}>
-                <Text style={{ transform: [{ rotate: '45deg' }], fontSize: isSelected ? 20 : 16 }}>{getEmoji(event.category)}</Text>
+                <Text style={{ transform: [{ rotate: '45deg' }], fontSize: 16 }}>{getEmoji(event.category)}</Text>
             </View>
         </View>
     );
-};
+});
 
 // -------------------------------------------------------------
-// Helper: Place Pin (Badge Horizontal)
+// Helper: Static Marker (Freeze snapshot after mount)
+// tracksViewChanges=true on mount, false after onLayout.
+// NEVER re-enables tracking. The pin must be fully static.
 // -------------------------------------------------------------
-const PlacePin = ({ place, isSelected }: { place: Place, isSelected: boolean }) => {
-    const scaleAnim = useRef(new Animated.Value(isSelected ? 1.15 : 1)).current;
+const StaticMarker = React.memo((props: React.ComponentProps<typeof Marker>) => {
+    const [track, setTrack] = useState(true);
+    const mountedRef = useRef(false);
 
-    useEffect(() => {
-        Animated.spring(scaleAnim, {
-            toValue: isSelected ? 1.25 : 1,
-            friction: 5, tension: 80,
-            useNativeDriver: true,
-        }).start();
-    }, [isSelected]);
+    const handleLayout = useCallback(() => {
+        if (!mountedRef.current) {
+            mountedRef.current = true;
+            setTimeout(() => setTrack(false), 300);
+        }
+    }, []);
 
+    return (
+        <Marker {...props} tracksViewChanges={track}>
+            <View onLayout={handleLayout}>
+                {props.children}
+            </View>
+        </Marker>
+    );
+}, (prev, next) => {
+    // Custom comparator: only re-render if coordinate actually changed
+    return prev.coordinate.latitude === next.coordinate.latitude
+        && prev.coordinate.longitude === next.coordinate.longitude;
+});
+
+// -------------------------------------------------------------
+// Helper: Place Pin (Badge Horizontal) — FULLY STATIC, no isSelected
+// -------------------------------------------------------------
+const PlacePin = React.memo(({ place }: { place: Place }) => {
     const getPlaceEmoji = (category: string) => {
         const cat = (category || '').toLowerCase();
         if (cat.includes('restaurante') || cat.includes('comida') || cat.includes('food')) return '🍽️';
@@ -103,56 +106,44 @@ const PlacePin = ({ place, isSelected }: { place: Place, isSelected: boolean }) 
     const emoji = place.categoryIcons?.[0] || getPlaceEmoji(place.category);
 
     return (
-        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center' }}>
-            {isSelected && (
-                <Animated.View style={{
-                    position: 'absolute', width: 44, height: 44, borderRadius: 22, backgroundColor: '#28c878',
-                    opacity: 0.25, transform: [{ scale: scaleAnim.interpolate({ inputRange: [1, 1.25], outputRange: [1, 1.6] }) }]
-                }} />
-            )}
-            <Animated.View style={{
+        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 80, height: 40 }}>
+            <View style={{
                 flexDirection: 'row', backgroundColor: '#28c878', paddingVertical: 6, paddingHorizontal: 10,
                 borderRadius: 20, alignItems: 'center',
-                transform: [{ scale: scaleAnim }],
                 shadowColor: '#28c878', shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: isSelected ? 0.6 : 0.2, shadowRadius: isSelected ? 8 : 3, elevation: isSelected ? 10 : 3,
-                borderColor: '#ffffff', borderWidth: isSelected ? 2 : 1
+                shadowOpacity: 0.2, shadowRadius: 3, elevation: 3,
+                borderColor: '#ffffff', borderWidth: 1
             }}>
                 <Text style={{ fontSize: 13 }}>{emoji}</Text>
-                {isSelected && (
-                    <Text style={{ color: 'white', fontWeight: 'bold', fontSize: 12, marginLeft: 6 }}>
-                        {place.name.split(' ')[0]}
-                    </Text>
-                )}
-            </Animated.View>
+            </View>
         </View>
     );
-};
+});
 
 // -------------------------------------------------------------
-// Helper: Person Pin (Avatar + Halo)
+// Helper: Person Pin (Avatar + Halo) — FULLY STATIC, no isSelected
 // -------------------------------------------------------------
-const PersonPin = ({ person, isSelected }: { person: PresenceUser, isSelected: boolean }) => {
+const PersonPin = React.memo(({ person }: { person: PresenceUser }) => {
     return (
         <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
             <View style={{
-                position: 'absolute', width: isSelected ? 56 : 46, height: isSelected ? 56 : 46,
-                borderRadius: 28, backgroundColor: 'rgba(70, 130, 255, 0.25)'
+                position: 'absolute', width: 46, height: 46,
+                borderRadius: 23, backgroundColor: 'rgba(70, 130, 255, 0.25)'
             }} />
             <View style={{
                 backgroundColor: '#fff', borderRadius: 20, padding: 2,
                 shadowColor: '#4682ff', shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: isSelected ? 0.6 : 0.3, shadowRadius: isSelected ? 6 : 3, elevation: 5,
+                shadowOpacity: 0.3, shadowRadius: 3, elevation: 5,
             }}>
                 {person.avatarUrl ? (
                     <Image source={{ uri: person.avatarUrl }} style={{
-                        width: isSelected ? 36 : 28, height: isSelected ? 36 : 28,
-                        borderRadius: 18, borderWidth: 2, borderColor: '#4682ff'
+                        width: 28, height: 28,
+                        borderRadius: 14, borderWidth: 2, borderColor: '#4682ff'
                     }} />
                 ) : (
                     <View style={{
-                        width: isSelected ? 36 : 28, height: isSelected ? 36 : 28,
-                        borderRadius: 18, borderWidth: 2, borderColor: '#4682ff',
+                        width: 28, height: 28,
+                        borderRadius: 14, borderWidth: 2, borderColor: '#4682ff',
                         backgroundColor: '#4682ff', justifyContent: 'center', alignItems: 'center'
                     }}>
                         <Text style={{ fontSize: 14 }}>{person.intentionEmoji || '👤'}</Text>
@@ -161,7 +152,7 @@ const PersonPin = ({ person, isSelected }: { person: PresenceUser, isSelected: b
             </View>
         </View>
     );
-};
+});
 
 // -------------------------------------------------------------
 // Helper: Cluster Pin
@@ -177,6 +168,33 @@ const ClusterPin = ({ count }: { count: number }) => (
     </View>
 );
 
+function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
+    const R = 6371; // km
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+        Math.sin(dLon / 2) * Math.sin(dLon / 2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+    return R * c;
+}
+
+function matchPlaceCategory(tipo: string, category: string): boolean {
+    const cat = category.toLowerCase();
+    switch (tipo.toLowerCase()) {
+        case 'cafés': return cat.includes('cafe') || cat.includes('café') || cat.includes('coffee') || cat.includes('bakery') || cat.includes('padaria');
+        case 'bares': return cat.includes('bar') || cat.includes('pub') || cat.includes('boteco') || cat.includes('brewery') || cat.includes('bebida');
+        case 'restaurantes': return cat.includes('restaurante') || cat.includes('food') || cat.includes('burger') || cat.includes('pizza') || cat.includes('sushi') || cat.includes('steak') || cat.includes('lanchonete') || cat.includes('comida');
+        case 'cultura': return cat.includes('museu') || cat.includes('museum') || cat.includes('history') || cat.includes('teatro') || cat.includes('theater') || cat.includes('cinema');
+        case 'natureza': return cat.includes('parque') || cat.includes('park') || cat.includes('praça') || cat.includes('nature') || cat.includes('beach') || cat.includes('praia') || cat.includes('mirante') || cat.includes('lago');
+        case 'esporte': return cat.includes('gym') || cat.includes('academia') || cat.includes('fitness') || cat.includes('sport') || cat.includes('esporte') || cat.includes('estádio');
+        case 'compras': return cat.includes('shopping') || cat.includes('mall') || cat.includes('store') || cat.includes('loja') || cat.includes('mercado');
+        case 'shows': return cat.includes('show') || cat.includes('music') || cat.includes('live') || cat.includes('concert') || cat.includes('festival') || cat.includes('clube') || cat.includes('balada');
+        case 'arte': return cat.includes('arte') || cat.includes('art') || cat.includes('gallery') || cat.includes('galeria');
+        default: return cat.includes(tipo.toLowerCase());
+    }
+}
+
 // -------------------------------------------------------------
 // Main Component
 // -------------------------------------------------------------
@@ -190,6 +208,72 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     const [userLocation, setUserLocation] = useState({ latitude: -26.9926, longitude: -48.6340 });
     const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
+
+    // Global Filters
+    const mapFilters = useMapFilterStore();
+
+    // Derived filtered datasets
+    const filteredEvents = useMemo(() => {
+        if (!userLocation) return events;
+        return events.filter(e => {
+            if (e.latitude === undefined || e.longitude === undefined) return false;
+            // Distance Filter
+            const dist = getDistance(userLocation.latitude, userLocation.longitude, e.latitude, e.longitude);
+            if (dist > mapFilters.distanceKm) return false;
+
+            // Events Filters (Encontros)
+            if (mapFilters.encontros.interesses.length > 0 && !mapFilters.encontros.interesses.includes(e.category.toLowerCase())) return false;
+
+            return true;
+        });
+    }, [events, userLocation, mapFilters]);
+
+    const filteredPlaces = useMemo(() => {
+        if (!userLocation) return foursquarePlaces;
+        return foursquarePlaces.filter(p => {
+            if (p.latitude === undefined || p.longitude === undefined) return false;
+            const dist = getDistance(userLocation.latitude, userLocation.longitude, p.latitude, p.longitude);
+            if (dist > mapFilters.distanceKm) return false;
+
+            // Places Filters (Lugares)
+            if (mapFilters.lugares.tipos.length > 0) {
+                const isTypeMatched = mapFilters.lugares.tipos.some(tipo => {
+                    return p.category ? matchPlaceCategory(tipo, p.category) : false;
+                });
+                if (!isTypeMatched) return false;
+            }
+            return true;
+        });
+    }, [foursquarePlaces, userLocation, mapFilters]);
+
+    const filteredUsers = useMemo(() => {
+        if (!userLocation) return activeUsers;
+        return activeUsers.filter(u => {
+            if (u.latitude === undefined || u.longitude === undefined) return false;
+            const dist = getDistance(userLocation.latitude, userLocation.longitude, u.latitude, u.longitude);
+            if (dist > mapFilters.distanceKm) return false;
+
+            // People Filters (Pessoas)
+            if (mapFilters.pessoas.soComFoto && !u.avatarUrl) return false;
+
+            return true;
+        });
+    }, [activeUsers, userLocation, mapFilters]);
+
+    const filteredHeatZones = useMemo(() => {
+        return MOCK_HEAT_ZONES.filter(zone => {
+            // Only show heat zone if there are actual events or active people nearby in that city
+            const hasEventsInCity = filteredEvents.some(e => {
+                const dist = getDistance(zone.latitude, zone.longitude, e.latitude, e.longitude);
+                return dist < 5; // within 5km of the heat zone center
+            });
+            const hasPeopleInCity = filteredUsers.some(u => {
+                const dist = getDistance(zone.latitude, zone.longitude, u.latitude, u.longitude);
+                return dist < 5;
+            });
+            return hasEventsInCity || hasPeopleInCity;
+        });
+    }, [filteredEvents, filteredUsers]);
 
     // Selected Item Logic
     const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'place' | 'person', data: any } | null>(null);
@@ -293,14 +377,14 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     const supercluster = useMemo(() => {
         const sc = new Supercluster({ radius: 40, maxZoom: 16 });
-        const points = activeLayers.includes('eventos') ? events.map(e => ({
+        const points = activeLayers.includes('eventos') ? filteredEvents.map(e => ({
             type: 'Feature',
             properties: { cluster: false, eventId: e.id, event: e },
             geometry: { type: 'Point', coordinates: [e.longitude, e.latitude] }
         })) : [];
         sc.load(points as any);
         return sc;
-    }, [events, activeLayers]);
+    }, [filteredEvents, activeLayers]);
 
     useEffect(() => {
         if (supercluster && region) {
@@ -326,17 +410,22 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         }).start();
     }, [selectedItem]);
 
-    const handleSelect = (type: 'event' | 'place' | 'person', data: any, lat: number, lng: number) => {
+    const handleSelectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const handleSelect = useCallback((type: 'event' | 'place' | 'person', data: any, lat: number, lng: number) => {
+        // Debounce rapid taps to prevent re-render storm
+        if (handleSelectRef.current) clearTimeout(handleSelectRef.current);
         lastMarkerPress.current = Date.now();
         setSelectedItem({ type, data });
         setIsMinimized(false);
-        mapRef.current?.animateToRegion({
-            latitude: lat - (region.latitudeDelta * 0.25), // offset slightly below center (25% of current screen real estate) to fit panel
-            longitude: lng,
-            latitudeDelta: Math.min(region.latitudeDelta, 0.02), // Preserve zoom if close, or zoom in if far
-            longitudeDelta: Math.min(region.longitudeDelta, 0.02),
-        }, 500);
-    };
+        handleSelectRef.current = setTimeout(() => {
+            mapRef.current?.animateToRegion({
+                latitude: lat - (region.latitudeDelta * 0.25),
+                longitude: lng,
+                latitudeDelta: Math.min(region.latitudeDelta, 0.02),
+                longitudeDelta: Math.min(region.longitudeDelta, 0.02),
+            }, 400);
+        }, 100);
+    }, [region]);
 
     if (hasLocationPermission === null) {
         return <View style={[styles.container, styles.centered]}><ActivityIndicator size="large" color={Colors.primary} /></View>;
@@ -356,9 +445,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     // Counts for MapLayerChips
     const counts = {
-        eventos: events.length,
-        lugares: foursquarePlaces.length,
-        pessoas: activeUsers.length,
+        eventos: filteredEvents.length,
+        lugares: filteredPlaces.length,
+        pessoas: filteredUsers.length,
         rotas: 0
     };
 
@@ -370,7 +459,13 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 style={styles.map}
                 provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
                 initialRegion={region}
-                onRegionChangeComplete={(r) => setRegion(r)}
+                onRegionChangeComplete={(r) => {
+                    // Avoid updating state if the map is just finishing an animation to a selected item
+                    // to prevent "teleporting" and jitter
+                    if (Date.now() - lastMarkerPress.current > 600) {
+                        setRegion(r);
+                    }
+                }}
                 showsUserLocation
                 showsMyLocationButton={false}
                 onPress={() => {
@@ -380,7 +475,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 }} // deselect on map click
             >
                 {/* Heatmap Layer for Events/Persons -> mapped as fuzzy circles for performance */}
-                {(activeLayers.includes('eventos') || activeLayers.includes('pessoas')) && MOCK_HEAT_ZONES.map(zone => (
+                {(activeLayers.includes('eventos') || activeLayers.includes('pessoas')) && filteredHeatZones.map(zone => (
                     <Circle
                         key={`heat-${zone.id}`}
                         center={{ latitude: zone.latitude, longitude: zone.longitude }}
@@ -392,64 +487,74 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 ))}
 
                 {/* Event Clusters & Markers */}
-                {activeLayers.includes('eventos') && [...clusters].sort((a, b) => {
-                    const aSel = !a.properties.cluster && selectedItem?.data.id === a.properties.eventId ? 1 : 0;
-                    const bSel = !b.properties.cluster && selectedItem?.data.id === b.properties.eventId ? 1 : 0;
-                    return aSel - bSel;
-                }).map(cluster => {
+                {activeLayers.includes('eventos') && clusters.map(cluster => {
                     const [longitude, latitude] = cluster.geometry.coordinates;
                     const isCluster = cluster.properties.cluster;
                     if (isCluster) {
                         return (
-                            <Marker key={`cluster-${cluster.id}`} coordinate={{ latitude, longitude }}
+                            <StaticMarker key={`cluster-${cluster.id}`} coordinate={{ latitude, longitude }}
                                 onPress={() => {
                                     const zoom = Math.round(Math.log(360 / region.longitudeDelta) / Math.LN2);
                                     mapRef.current?.animateToRegion({ latitude, longitude, latitudeDelta: region.latitudeDelta / 2, longitudeDelta: region.longitudeDelta / 2 });
-                                }}>
+                                }}
+                            >
                                 <ClusterPin count={cluster.properties.point_count} />
-                            </Marker>
+                            </StaticMarker>
                         );
                     }
                     const event = cluster.properties.event;
                     return (
-                        <Marker key={`event-${event.id}`} coordinate={{ latitude, longitude }}
+                        <StaticMarker key={`event-${event.id}`} coordinate={{ latitude, longitude }}
                             onPress={() => handleSelect('event', event, latitude, longitude)}
                         >
-                            <EventPin event={event} isSelected={selectedItem?.data.id === event.id} />
-                        </Marker>
+                            <EventPin event={event} />
+                        </StaticMarker>
                     );
                 })}
 
                 {/* Place Markers */}
-                {activeLayers.includes('lugares') && [...foursquarePlaces].sort((a, b) => {
-                    return (selectedItem?.data.id === a.id ? 1 : 0) - (selectedItem?.data.id === b.id ? 1 : 0);
-                }).map((place) => (
-                    <Marker key={`place-${place.id}`} coordinate={{ latitude: place.latitude, longitude: place.longitude }}
+                {activeLayers.includes('lugares') && filteredPlaces.map((place) => (
+                    <StaticMarker key={`place-${place.id}`} coordinate={{ latitude: place.latitude, longitude: place.longitude }}
                         onPress={() => handleSelect('place', place, place.latitude, place.longitude)}
                     >
-                        <PlacePin place={place} isSelected={selectedItem?.data.id === place.id} />
-                    </Marker>
+                        <PlacePin place={place} />
+                    </StaticMarker>
                 ))}
 
                 {/* Person Markers */}
-                {activeLayers.includes('pessoas') && [...activeUsers].sort((a, b) => {
-                    return (selectedItem?.data.id === a.id ? 1 : 0) - (selectedItem?.data.id === b.id ? 1 : 0);
-                }).map((person) => {
+                {activeLayers.includes('pessoas') && filteredUsers.map((person) => {
                     const ago = Date.now() - new Date(person.lastActive).getTime();
-                    if (ago > 10 * 60 * 1000) return null; // Only active < 10m
+                    if (ago > 10 * 60 * 1000) return null;
                     return (
-                        <Marker key={`person-${person.id}`} coordinate={{ latitude: person.latitude, longitude: person.longitude }}
+                        <StaticMarker key={`person-${person.id}`} coordinate={{ latitude: person.latitude, longitude: person.longitude }}
                             onPress={() => handleSelect('person', person, person.latitude, person.longitude)}
                         >
-                            <PersonPin person={person} isSelected={selectedItem?.data.id === person.id} />
-                        </Marker>
+                            <PersonPin person={person} />
+                        </StaticMarker>
                     );
                 })}
+
+                {/* Native Circle highlight for selected item */}
+                {selectedItem && selectedItem.data.latitude != null && selectedItem.data.longitude != null && (
+                    <Circle
+                        key={`selection-highlight-${selectedItem.data.id}`}
+                        center={{ latitude: selectedItem.data.latitude, longitude: selectedItem.data.longitude }}
+                        radius={35}
+                        fillColor={selectedItem.type === 'event' ? 'rgba(255, 80, 40, 0.20)' : selectedItem.type === 'place' ? 'rgba(40, 200, 120, 0.25)' : 'rgba(70, 130, 255, 0.25)'}
+                        strokeColor={selectedItem.type === 'event' ? 'rgba(255, 80, 40, 0.5)' : selectedItem.type === 'place' ? 'rgba(40, 200, 120, 0.5)' : 'rgba(70, 130, 255, 0.5)'}
+                        strokeWidth={2}
+                    />
+                )}
             </MapView>
 
             {/* Layer Chips */}
             <View style={[styles.layerChipsContainer, { top: insets.top + 8 }]} pointerEvents="box-none">
-                <MapLayerChips activeLayers={activeLayers} onToggle={toggleLayer} counts={counts} />
+                <MapLayerChips
+                    activeLayers={activeLayers}
+                    onToggle={toggleLayer}
+                    counts={counts}
+                    onOpenFilters={() => navigation.navigate('MapFilter')}
+                />
             </View>
 
             {/* Float Action Button & Locate Button (adjust translation when panel is active) */}
@@ -505,9 +610,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         <View style={[styles.dragHandle, { marginBottom: 0 }]} />
                     </TouchableOpacity>
                 </View>
-                <Text style={styles.sheetTitle}>Perto de você · {events.length} encontros</Text>
+                <Text style={styles.sheetTitle}>Perto de você · {filteredEvents.length} encontros</Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
-                    {events.slice(0, 5).map(e => (
+                    {filteredEvents.slice(0, 5).map(e => (
                         <TouchableOpacity key={e.id} style={styles.miniCard} onPress={() => handleSelect('event', e, e.latitude, e.longitude)}>
                             <View style={[styles.miniCardHeader, { backgroundColor: e.title.includes('Agora') ? '#FFEDD5' : '#F3F4F6' }]}>
                                 <Text style={{ fontSize: 20 }}>⚽</Text>
