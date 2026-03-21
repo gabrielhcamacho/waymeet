@@ -412,9 +412,13 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     const handleSelectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const handleSelect = useCallback((type: 'event' | 'place' | 'person', data: any, lat: number, lng: number) => {
-        // Debounce rapid taps to prevent re-render storm
+        // Prevent extremely rapid consecutive taps from causing a native bridge crash
+        const now = Date.now();
+        if (now - lastMarkerPress.current < 300) return;
+        lastMarkerPress.current = now;
+
         if (handleSelectRef.current) clearTimeout(handleSelectRef.current);
-        lastMarkerPress.current = Date.now();
+        
         setSelectedItem({ type, data });
         setIsMinimized(false);
         handleSelectRef.current = setTimeout(() => {
@@ -537,7 +541,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 {/* Native Circle highlight for selected item */}
                 {selectedItem && selectedItem.data.latitude != null && selectedItem.data.longitude != null && (
                     <Circle
-                        key={`selection-highlight-${selectedItem.data.id}`}
+                        key="selection-highlight-circle"
                         center={{ latitude: selectedItem.data.latitude, longitude: selectedItem.data.longitude }}
                         radius={35}
                         fillColor={selectedItem.type === 'event' ? 'rgba(255, 80, 40, 0.20)' : selectedItem.type === 'place' ? 'rgba(40, 200, 120, 0.25)' : 'rgba(70, 130, 255, 0.25)'}
