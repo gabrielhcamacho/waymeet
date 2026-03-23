@@ -93,7 +93,7 @@ export const PublicProfileScreen = () => {
                 <View className="items-center px-5 pt-4">
                     <FlipAvatar
                         avatarUrl={profileUser.avatarUrl || ''}
-                        dicebearSeed={profileUser.secondaryAvatarSeed || ''}
+                        bitmojiConfig={profileUser.secondaryAvatarSeed || ''}
                     />
                     <Text className="text-xl font-bold text-gray-900 text-center mt-3">{profileUser.displayName}</Text>
                     

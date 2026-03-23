@@ -2,7 +2,7 @@ import { Colors } from '../../config/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/src/components/ui/text';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { TextField } from './components/edit/TextField';
 import { PhotoHeader } from './components/edit/PhotoHeader';
 import { TabSwitcher } from './components/edit/TabSwitcher';
@@ -12,69 +12,19 @@ import { AvatarOptionRow } from './components/edit/AvatarOptionRow';
 import { CategorySelector } from './components/edit/CategorySelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { AVATAR_OPTIONS } from '@/src/utils/avatarConfig';
-
-type AvatarConfig = Record<string, string> & { seed: string };
-
-function parseSeed(seedStr: string): AvatarConfig {
-    if (seedStr.includes('=')) {
-        const obj: Record<string, string> = {};
-        seedStr.split('&').forEach((part) => {
-            const [key, value] = part.split('=');
-            if (key && value) obj[decodeURIComponent(key)] = decodeURIComponent(value);
-        });
-        if (!obj.seed) obj.seed = Math.random().toString(36).substring(2, 10);
-        return obj as AvatarConfig;
-    }
-    return { seed: seedStr || Math.random().toString(36).substring(2, 10) };
-}
-
-/**
- * Builds a valid DiceBear v9 avataaars URL from the stored config.
- * Each option category maps to a single query-string param with the chosen value.
- * Optional features (facialHair, accessories) set their probability to 100
- * when explicitly chosen, or 0 when absent.
- */
-function buildDicebearUrl(config: AvatarConfig): string {
-    const params = new URLSearchParams();
-
-    // Seed is always present
-    params.set('seed', config.seed ?? Math.random().toString(36).substring(2, 10));
-
-    const directKeys = [
-        'top', 'eyes', 'eyebrows', 'mouth',
-        'clothing', 'clothesColor', 'clothingGraphic',
-        'hairColor', 'skinColor', 'hatColor', 'facialHairColor',
-    ];
-
-    for (const key of directKeys) {
-        if (config[key]) params.set(key, config[key]);
-    }
-
-    // facialHair: must also set probability so it always shows
-    if (config.facialHair) {
-        params.set('facialHair', config.facialHair);
-        params.set('facialHairProbability', '100');
-    } else {
-        params.set('facialHairProbability', '0');
-    }
-
-    // accessories: must also set probability so it always shows
-    if (config.accessories) {
-        params.set('accessories', config.accessories);
-        params.set('accessoriesProbability', '100');
-    } else {
-        params.set('accessoriesProbability', '0');
-    }
-
-    return `https://api.dicebear.com/9.x/avataaars/svg?${params.toString()}`;
-}
-
-function serializeConfig(config: AvatarConfig): string {
-    return Object.entries(config)
-        .map(([k, v]) => `${encodeURIComponent(k)}=${encodeURIComponent(v)}`)
-        .join('&');
-}
+import {
+    AVATAR_OPTIONS_GENDERED,
+    GENERIC_OPTIONS,
+    AVATAR_CATEGORY_ORDER,
+    AVATAR_CATEGORY_ICONS,
+    CATEGORY_LABELS,
+    buildBitmojiUrl,
+    serializeConfig,
+    parseConfig,
+    DEFAULT_AVATAR_CONFIG,
+    COLOR_LABELS,
+    type AvatarConfig,
+} from '@/src/utils/avatarConfig';
 
 export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
@@ -90,10 +40,35 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
         user?.selectedCategories || [],
     );
     const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(() =>
-        parseSeed(user?.secondaryAvatarSeed || ''),
+        parseConfig(user?.secondaryAvatarSeed || ''),
     );
+    const [activeAvatarCategory, setActiveAvatarCategory] = useState<typeof AVATAR_CATEGORY_ORDER[number]>(AVATAR_CATEGORY_ORDER[0]);
 
-    const dicebearUrl = useMemo(() => buildDicebearUrl(avatarConfig), [avatarConfig]);
+    // This is the generated Bitmoji preview URL
+    const bitmojiPreviewUrl = useMemo(() => buildBitmojiUrl(avatarConfig), [avatarConfig]);
+
+    // Handle initial gender setup or trait validation if gender changes
+    useEffect(() => {
+        const genderOptions = AVATAR_OPTIONS_GENDERED[avatarConfig.gender];
+        if (!genderOptions) return;
+
+        // Ensure current traits are valid for this gender (mostly for hair/beard/brow/mouth)
+        const checkTraits = ['hair', 'brow', 'mouth', 'beard', 'body'];
+        let needsUpdate = false;
+        const newConfig = { ...avatarConfig };
+
+        checkTraits.forEach(trait => {
+            const options = genderOptions[trait];
+            if (options && !options.includes(newConfig[trait])) {
+                newConfig[trait] = options[0];
+                needsUpdate = true;
+            }
+        });
+
+        if (needsUpdate) {
+            setAvatarConfig(newConfig);
+        }
+    }, [avatarConfig.gender]);
 
     const toggleCategory = (id: string) =>
         setSelectedCategories((prev) =>
@@ -133,6 +108,42 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
         ]);
     };
 
+    const handleRandomize = () => {
+        const pick = (arr: readonly string[]) => arr[Math.floor(Math.random() * arr.length)];
+        const gender = pick(['1', '2']);
+        const genderOptions = AVATAR_OPTIONS_GENDERED[gender];
+        const generic = GENERIC_OPTIONS;
+
+        setAvatarConfig({
+            ...DEFAULT_AVATAR_CONFIG,
+            gender,
+            skin_tone: pick(genderOptions.skin_tone),
+            hair: pick(genderOptions.hair),
+            hair_tone: pick(genderOptions.hair_tone),
+            eye: pick(genderOptions.eye),
+            pupil_tone: pick(genderOptions.pupil_tone),
+            brow: pick(genderOptions.brow),
+            nose: pick(genderOptions.nose),
+            mouth: pick(genderOptions.mouth),
+            beard: pick(genderOptions.beard),
+            body: pick(genderOptions.body),
+            top: pick(generic.top),
+            bottom: pick(generic.bottom),
+            footwear: pick(generic.footwear),
+            backgroundColor: pick(generic.backgroundColor),
+        });
+    };
+
+    const handleAvatarOptionSelect = (key: string, val: string) => {
+        setAvatarConfig((prev) => ({ ...prev, [key]: val }));
+    };
+
+    // Get available options for current category and gender
+    const currentOptions = useMemo(() => {
+        const genderOptions = AVATAR_OPTIONS_GENDERED[avatarConfig.gender];
+        return genderOptions[activeAvatarCategory] || (GENERIC_OPTIONS as any)[activeAvatarCategory] || [];
+    }, [activeAvatarCategory, avatarConfig.gender]);
+
     return (
         <View className="flex-1 bg-white px-5" style={{ paddingTop: insets.top + 10 }}>
             {/* Header */}
@@ -148,73 +159,105 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
 
             <TabSwitcher activeTab={activeTab} onTabChange={setActiveTab} />
 
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
-            >
-                {activeTab === 'info' ? (
-                    <>
-                        <PhotoHeader
-                            coverPhotoUrl={coverPhotoUrl}
-                            avatarUrl={avatarUrl}
-                            onPickCover={() => pickImage('cover')}
-                            onPickAvatar={() => pickImage('avatar')}
-                        />
-                        <TextField label="Nome" placeholder="Seu nome" value={name} onChangeText={setName} />
-                        <TextField label="Cidade" placeholder="Sua cidade" value={city} onChangeText={setCity} />
-                        <TextField
-                            label="Bio"
-                            placeholder="Sobre você..."
-                            value={bio}
-                            onChangeText={setBio}
-                            multiline
-                            height={100}
-                        />
-                        <CategorySelector
-                            selectedCategories={selectedCategories}
-                            onToggle={toggleCategory}
-                        />
-                        <TouchableOpacity
-                            className="flex-row items-center justify-center gap-2 py-4 rounded-xl border-[1.5px] border-error mt-[30px]"
-                            onPress={handleDelete}
-                        >
-                            <Ionicons name="trash-outline" size={18} color={Colors.error} />
-                            <Text className="text-[15px] font-semibold text-error">Excluir conta</Text>
-                        </TouchableOpacity>
-                    </>
-                ) : (
-                    <View className="mt-6 mb-8">
-                        <AvatarPreview
-                            dicebearUrl={dicebearUrl}
-                            onRandomize={() =>
-                                setAvatarConfig({ seed: Math.random().toString(36).substring(2, 10) })
-                            }
-                        />
-                        {(Object.keys(AVATAR_OPTIONS)).map((cat) => {
-                            const isOptional = cat === 'facialHair' || cat === 'accessories';
+            {activeTab === 'info' ? (
+                <ScrollView
+                    showsVerticalScrollIndicator={false}
+                    contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+                >
+                    <PhotoHeader
+                        coverPhotoUrl={coverPhotoUrl}
+                        avatarUrl={avatarUrl}
+                        onPickCover={() => pickImage('cover')}
+                        onPickAvatar={() => pickImage('avatar')}
+                    />
+                    <TextField label="Nome" placeholder="Seu nome" value={name} onChangeText={setName} />
+                    <TextField label="Cidade" placeholder="Sua cidade" value={city} onChangeText={setCity} />
+                    <TextField
+                        label="Bio"
+                        placeholder="Sobre você..."
+                        value={bio}
+                        onChangeText={setBio}
+                        multiline
+                        height={100}
+                    />
+                    <CategorySelector
+                        selectedCategories={selectedCategories}
+                        onToggle={toggleCategory}
+                    />
+                    <TouchableOpacity
+                        className="flex-row items-center justify-center gap-2 py-4 rounded-xl border-[1.5px] border-error mt-[30px]"
+                        onPress={handleDelete}
+                    >
+                        <Ionicons name="trash-outline" size={18} color={Colors.error} />
+                        <Text className="text-[15px] font-semibold text-error">Excluir conta</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            ) : (
+                <View className="flex-1 mt-3">
+                    {/* Avatar Preview — Fixed on top */}
+                    <AvatarPreview
+                        avatarUrl={bitmojiPreviewUrl}
+                        backgroundColor={COLOR_LABELS[avatarConfig.backgroundColor]?.hex || avatarConfig.backgroundColor}
+                        onRandomize={handleRandomize}
+                    />
+
+                    {/* Category Tabs — Horizontal scrollable icons */}
+                    <ScrollView
+                        horizontal
+                        showsHorizontalScrollIndicator={false}
+                        contentContainerStyle={{ paddingHorizontal: 4, gap: 2 }}
+                        className="mb-2"
+                        style={{ flexGrow: 0 }}
+                    >
+                        {AVATAR_CATEGORY_ORDER.map((cat) => {
+                            const isActive = activeAvatarCategory === cat;
+                            const iconName = AVATAR_CATEGORY_ICONS[cat] as keyof typeof Ionicons.glyphMap;
                             return (
-                                <AvatarOptionRow
+                                <TouchableOpacity
                                     key={cat}
-                                    category={cat}
-                                    options={AVATAR_OPTIONS[cat]}
-                                    selectedValue={avatarConfig[cat]}
-                                    onSelect={(key, val) =>
-                                        setAvatarConfig((prev) => {
-                                            // Toggle off optional categories when re-clicking
-                                            if (isOptional && prev[key] === val) {
-                                                const next = { ...prev };
-                                                delete next[key];
-                                                return next;
-                                            }
-                                            return { ...prev, [key]: val };
-                                        })
-                                    }
-                                />
+                                    onPress={() => setActiveAvatarCategory(cat)}
+                                    className={`items-center justify-center px-3 py-2 rounded-xl ${isActive ? 'bg-orange-50' : ''}`}
+                                    style={{ minWidth: 56 }}
+                                >
+                                    <Ionicons
+                                        name={iconName}
+                                        size={22}
+                                        color={isActive ? Colors.primary : Colors.textMuted}
+                                    />
+                                    <Text
+                                        className={`text-[9px] mt-1 ${isActive ? 'text-orange-600 font-bold' : 'text-gray-400'}`}
+                                        numberOfLines={1}
+                                    >
+                                        {CATEGORY_LABELS[cat]}
+                                    </Text>
+                                    {isActive && (
+                                        <View className="w-5 h-[2.5px] bg-orange-500 rounded-full mt-1" />
+                                    )}
+                                </TouchableOpacity>
                             );
                         })}
-                    </View>
-                )}
-            </ScrollView>
+                    </ScrollView>
+
+                    {/* Category label */}
+                    <Text className="text-sm font-bold text-text px-4 mt-2 mb-1">
+                        {CATEGORY_LABELS[activeAvatarCategory]}
+                    </Text>
+
+                    {/* Options for the active category */}
+                    <ScrollView
+                        showsVerticalScrollIndicator={false}
+                        contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
+                        className="flex-1"
+                    >
+                        <AvatarOptionRow
+                            category={activeAvatarCategory}
+                            options={currentOptions}
+                            selectedValue={avatarConfig[activeAvatarCategory]}
+                            onSelect={handleAvatarOptionSelect}
+                        />
+                    </ScrollView>
+                </View>
+            )}
         </View>
     );
 };
