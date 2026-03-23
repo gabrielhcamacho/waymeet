@@ -28,7 +28,14 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      [
+        "@maplibre/maplibre-react-native",
+        {
+          "locationAlwaysAndWhenInUsePermission": "Allow WayMeet to use your location to show nearby events and places.",
+          "locationWhenInUsePermission": "Allow WayMeet to use your location to show nearby events and places."
+        }
+      ]
     ]
   }
 }
