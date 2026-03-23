@@ -39,7 +39,7 @@ export const ProfileHeader: React.FC<ProfileHeaderProps> = ({
         <View className="items-center px-5 -mt-[45px]">
             <FlipAvatar
                 avatarUrl={user?.avatarUrl || ''}
-                dicebearSeed={user?.secondaryAvatarSeed || ''}
+                bitmojiConfig={user?.secondaryAvatarSeed || ''}
             />
 
             <Text className="text-2xl font-bold text-gray-900 mt-3">

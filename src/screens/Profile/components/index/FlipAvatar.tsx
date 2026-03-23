@@ -1,21 +1,28 @@
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useMemo } from 'react';
 import { View, TouchableOpacity, ImageBackground, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
-import { Shadows } from '@/src/config/theme';
+import { Shadows, Colors } from '@/src/config/theme';
+import { buildBitmojiUrl, parseConfig, COLOR_LABELS } from '@/src/utils/avatarConfig';
 
 interface FlipAvatarProps {
-    avatarUrl: string;
-    dicebearSeed: string;
+    avatarUrl: string; // The photo avatar
+    bitmojiConfig: string; // The serialized bitmoji config
 }
 
-export const FlipAvatar: React.FC<FlipAvatarProps> = ({ avatarUrl, dicebearSeed }) => {
-    const [showingDicebear, setShowingDicebear] = useState(false);
+export const FlipAvatar: React.FC<FlipAvatarProps> = ({ avatarUrl, bitmojiConfig }) => {
+    const [showingBitmoji, setShowingBitmoji] = useState(false);
     const flipAnim = useRef(new Animated.Value(0)).current;
 
-    const dicebearUrl = dicebearSeed
-        ? `https://api.dicebear.com/9.x/avataaars/svg?${dicebearSeed}`
-        : null;
+    const bitmojiUrl = useMemo(() => {
+        if (!bitmojiConfig) return null;
+        try {
+            const config = parseConfig(bitmojiConfig);
+            return buildBitmojiUrl(config);
+        } catch (e) {
+            return null;
+        }
+    }, [bitmojiConfig]);
 
     const frontInterpolate = flipAnim.interpolate({
         inputRange: [0, 180],
@@ -36,12 +43,12 @@ export const FlipAvatar: React.FC<FlipAvatarProps> = ({ avatarUrl, dicebearSeed 
 
     const handleFlip = () => {
         Animated.spring(flipAnim, {
-            toValue: showingDicebear ? 0 : 180,
+            toValue: showingBitmoji ? 0 : 180,
             friction: 8,
             tension: 10,
             useNativeDriver: true,
         }).start();
-        setShowingDicebear(!showingDicebear);
+        setShowingBitmoji(!showingBitmoji);
     };
 
     return (
@@ -79,13 +86,13 @@ export const FlipAvatar: React.FC<FlipAvatarProps> = ({ avatarUrl, dicebearSeed 
                         overflow: 'hidden',
                         borderWidth: 4,
                         borderColor: '#FED7AA',
-                        backgroundColor: '#FFF7ED',
+                        backgroundColor: COLOR_LABELS[parseConfig(bitmojiConfig).backgroundColor]?.hex || parseConfig(bitmojiConfig).backgroundColor || '#FFF7ED',
                         ...Shadows.medium,
                     }}
                 >
-                    {dicebearUrl ? (
+                    {bitmojiUrl ? (
                         <Image
-                            source={{ uri: dicebearUrl }}
+                            source={{ uri: bitmojiUrl }}
                             style={{ width: '100%', height: '100%' }}
                             contentFit="contain"
                         />
