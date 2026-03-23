@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions, Platform, Linking, ActivityIndicator, Animated, Image, ScrollView, PanResponder } from 'react-native';
-import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import MapLibreGL from '@maplibre/maplibre-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Shadows, BorderRadius } from '../../config/theme';
 import { Text } from '@/src/components/ui/text';
@@ -20,10 +20,12 @@ import Supercluster from 'supercluster';
 
 const { width, height } = Dimensions.get('window');
 
+MapLibreGL.setAccessToken(null);
+
 // -------------------------------------------------------------
 // Helper: Event Pin (Teardrop) — FULLY STATIC, no isSelected
 // -------------------------------------------------------------
-const EventPin = React.memo(({ event }: { event: WayMeetEvent }) => {
+const EventPin = React.memo(({ event, zoomAnim }: { event: WayMeetEvent, zoomAnim: Animated.Value }) => {
     const isAgora = event.title.toLowerCase().includes('agora') || event.category === 'Sports';
 
     const getEmoji = (cat: string) => {
@@ -34,8 +36,14 @@ const EventPin = React.memo(({ event }: { event: WayMeetEvent }) => {
         return '📍';
     };
 
+    const scale = zoomAnim ? zoomAnim.interpolate({
+        inputRange: [9, 13, 16],
+        outputRange: [0.3, 0.7, 1.1],
+        extrapolate: 'clamp',
+    }) : 1;
+
     return (
-        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
+        <Animated.View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60, transform: [{ scale }] }}>
             {isAgora && (
                 <View style={{
                     position: 'absolute', width: 44, height: 44, borderRadius: 22,
@@ -54,47 +62,20 @@ const EventPin = React.memo(({ event }: { event: WayMeetEvent }) => {
             }}>
                 <Text style={{ transform: [{ rotate: '45deg' }], fontSize: 16 }}>{getEmoji(event.category)}</Text>
             </View>
-        </View>
+        </Animated.View>
     );
 });
 
-// -------------------------------------------------------------
-// Helper: Static Marker (Freeze snapshot after mount)
-// tracksViewChanges=true on mount, false after onLayout.
-// NEVER re-enables tracking. The pin must be fully static.
-// -------------------------------------------------------------
-const StaticMarker = React.memo((props: React.ComponentProps<typeof Marker>) => {
-    const [track, setTrack] = useState(true);
-    const mountedRef = useRef(false);
-
-    const handleLayout = useCallback(() => {
-        if (!mountedRef.current) {
-            mountedRef.current = true;
-            setTimeout(() => setTrack(false), 300);
-        }
-    }, []);
-
-    return (
-        <Marker {...props} tracksViewChanges={track}>
-            <View onLayout={handleLayout}>
-                {props.children}
-            </View>
-        </Marker>
-    );
-}, (prev, next) => {
-    // Custom comparator: only re-render if coordinate actually changed
-    return prev.coordinate.latitude === next.coordinate.latitude
-        && prev.coordinate.longitude === next.coordinate.longitude;
-});
+// Remove StaticMarker - we will use MapLibreGL.MarkerView directly.
 
 // -------------------------------------------------------------
 // Helper: Place Pin (Badge Horizontal) — FULLY STATIC, no isSelected
 // -------------------------------------------------------------
-const PlacePin = React.memo(({ place }: { place: Place }) => {
+const PlacePin = React.memo(({ place, distance, zoomAnim }: { place: Place, distance: number, zoomAnim: Animated.Value }) => {
     const getPlaceEmoji = (category: string) => {
         const cat = (category || '').toLowerCase();
         if (cat.includes('restaurante') || cat.includes('comida') || cat.includes('food')) return '🍽️';
-        if (cat.includes('bar') || cat.includes('pub') || cat.includes('bebida')) return '🍸';
+        if (cat.includes('bar') || cat.includes('pub') || cat.includes('bebida')) return '🍺';
         if (cat.includes('parque') || cat.includes('praça')) return '🌳';
         if (cat.includes('museu') || cat.includes('arte')) return '🏛️';
         if (cat.includes('mirante') || cat.includes('vista')) return '🏔️';
@@ -104,28 +85,66 @@ const PlacePin = React.memo(({ place }: { place: Place }) => {
     };
 
     const emoji = place.categoryIcons?.[0] || getPlaceEmoji(place.category);
+    const categoryName = place.category || 'Local';
+    const distText = distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`;
+
+    const scale = zoomAnim.interpolate({
+        inputRange: [10, 14, 17],
+        outputRange: [0.2, 0.65, 1.0],
+        extrapolate: 'clamp',
+    });
 
     return (
-        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 80, height: 40 }}>
+        <Animated.View pointerEvents="none" style={{ alignItems: 'center', transform: [{ scale }] }}>
             <View style={{
-                flexDirection: 'row', backgroundColor: '#28c878', paddingVertical: 6, paddingHorizontal: 10,
-                borderRadius: 20, alignItems: 'center',
-                shadowColor: '#28c878', shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.2, shadowRadius: 3, elevation: 3,
-                borderColor: '#ffffff', borderWidth: 1
+                flexDirection: 'row',
+                backgroundColor: '#ffffff',
+                paddingVertical: 5,
+                paddingHorizontal: 9,
+                borderRadius: 20,
+                alignItems: 'center',
+                shadowColor: '#000',
+                shadowOffset: { width: 0, height: 1 },
+                shadowOpacity: 0.12,
+                shadowRadius: 3,
+                elevation: 3,
             }}>
-                <Text style={{ fontSize: 13 }}>{emoji}</Text>
+                <View style={{ marginRight: 5 }}>
+                    <Text style={{ fontSize: 14 }}>{emoji}</Text>
+                </View>
+                <View style={{ flexDirection: 'column' }}>
+                    <Text style={{ fontSize: 11, fontWeight: '800', color: '#1f2937' }} numberOfLines={1}>
+                        {place.name}
+                    </Text>
+                    <Text style={{ fontSize: 9, fontWeight: '600', color: '#6b7280' }}>
+                        {categoryName} · {distText}
+                    </Text>
+                </View>
             </View>
-        </View>
+            <View style={{
+                width: 8,
+                height: 8,
+                backgroundColor: '#ffffff',
+                transform: [{ rotate: '45deg' }],
+                marginTop: -4,
+                zIndex: -1,
+            }} />
+        </Animated.View>
     );
 });
 
 // -------------------------------------------------------------
 // Helper: Person Pin (Avatar + Halo) — FULLY STATIC, no isSelected
 // -------------------------------------------------------------
-const PersonPin = React.memo(({ person }: { person: PresenceUser }) => {
+const PersonPin = React.memo(({ person, zoomAnim }: { person: PresenceUser, zoomAnim: Animated.Value }) => {
+    const scale = zoomAnim.interpolate({
+        inputRange: [9, 13, 16],
+        outputRange: [0.3, 0.7, 1.1],
+        extrapolate: 'clamp',
+    });
+
     return (
-        <View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60 }}>
+        <Animated.View pointerEvents="none" style={{ alignItems: 'center', justifyContent: 'center', width: 60, height: 60, transform: [{ scale }] }}>
             <View style={{
                 position: 'absolute', width: 46, height: 46,
                 borderRadius: 23, backgroundColor: 'rgba(70, 130, 255, 0.25)'
@@ -150,23 +169,55 @@ const PersonPin = React.memo(({ person }: { person: PresenceUser }) => {
                     </View>
                 )}
             </View>
-        </View>
+        </Animated.View>
     );
 });
 
 // -------------------------------------------------------------
 // Helper: Cluster Pin
 // -------------------------------------------------------------
-const ClusterPin = ({ count }: { count: number }) => (
-    <View style={{
-        width: 44, height: 44, borderRadius: 22, backgroundColor: '#ff5028',
-        justifyContent: 'center', alignItems: 'center',
-        shadowColor: '#ff5028', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 6,
-        borderWidth: 2, borderColor: '#fff'
-    }}>
-        <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{count}</Text>
-    </View>
-);
+const ClusterPin = ({ count, zoomAnim }: { count: number, zoomAnim: Animated.Value }) => {
+    const scale = zoomAnim.interpolate({
+        inputRange: [9, 13, 16],
+        outputRange: [0.6, 0.9, 1.2],
+        extrapolate: 'clamp',
+    });
+
+    return (
+        <Animated.View style={{
+            width: 44, height: 44, borderRadius: 22, backgroundColor: '#ff5028',
+            justifyContent: 'center', alignItems: 'center',
+            shadowColor: '#ff5028', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.5, shadowRadius: 5, elevation: 6,
+            borderWidth: 2, borderColor: '#fff',
+            transform: [{ scale }]
+        }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 16 }}>{count}</Text>
+        </Animated.View>
+    );
+};
+
+// -------------------------------------------------------------
+// Helper: Place Cluster Pin (green bubble with count)
+// -------------------------------------------------------------
+const PlaceClusterPin = ({ count, zoomAnim }: { count: number, zoomAnim: Animated.Value }) => {
+    const scale = zoomAnim.interpolate({
+        inputRange: [10, 14, 17],
+        outputRange: [0.5, 0.85, 1.1],
+        extrapolate: 'clamp',
+    });
+
+    return (
+        <Animated.View style={{
+            width: 40, height: 40, borderRadius: 20, backgroundColor: '#28c878',
+            justifyContent: 'center', alignItems: 'center',
+            shadowColor: '#28c878', shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.4, shadowRadius: 4, elevation: 5,
+            borderWidth: 2, borderColor: '#fff',
+            transform: [{ scale }]
+        }}>
+            <Text style={{ color: '#fff', fontWeight: 'bold', fontSize: 14 }}>{count}</Text>
+        </Animated.View>
+    );
+};
 
 function getDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371; // km
@@ -201,7 +252,8 @@ function matchPlaceCategory(tipo: string, category: string): boolean {
 export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const { events } = useEventsStore();
-    const mapRef = useRef<MapView>(null);
+    const cameraRef = useRef<React.ElementRef<typeof MapLibreGL.Camera>>(null);
+    const mapRef = useRef<React.ElementRef<typeof MapLibreGL.MapView>>(null);
     const [activeLayers, setActiveLayers] = useState<MapLayer[]>(['eventos', 'pessoas']);
     const [foursquarePlaces, setFoursquarePlaces] = useState<Place[]>([]);
     const { activeUsers, setActiveUsers } = usePresenceStore();
@@ -274,6 +326,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
             return hasEventsInCity || hasPeopleInCity;
         });
     }, [filteredEvents, filteredUsers]);
+
+    // Map Zoom tracking for Marker dynamic scaling
+    const mapZoomAnim = useRef(new Animated.Value(15)).current;
 
     // Selected Item Logic
     const [selectedItem, setSelectedItem] = useState<{ type: 'event' | 'place' | 'person', data: any } | null>(null);
@@ -360,14 +415,16 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     useEffect(() => {
         if (activeLayers.includes('lugares')) {
-            foursquareService.getPlacesNearby(userLocation.latitude, userLocation.longitude)
+            const radiusMeters = Math.round(mapFilters.distanceKm * 1000);
+            foursquareService.getPlacesNearby(userLocation.latitude, userLocation.longitude, radiusMeters)
                 .then(places => setFoursquarePlaces(places))
                 .catch(err => console.error(err));
         }
-    }, [activeLayers, userLocation]);
+    }, [activeLayers, userLocation, mapFilters.distanceKm]);
 
     // Clustering logic via supercluster for events (only if active)
     const [clusters, setClusters] = useState<any[]>([]);
+    const [placeClusters, setPlaceClusters] = useState<any[]>([]);
     const [region, setRegion] = useState({
         latitude: userLocation.latitude,
         longitude: userLocation.longitude,
@@ -386,8 +443,19 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         return sc;
     }, [filteredEvents, activeLayers]);
 
+    const placeSupercluster = useMemo(() => {
+        const sc = new Supercluster({ radius: 60, maxZoom: 17 });
+        const points = activeLayers.includes('lugares') ? filteredPlaces.map(p => ({
+            type: 'Feature',
+            properties: { cluster: false, placeId: p.id, place: p },
+            geometry: { type: 'Point', coordinates: [p.longitude, p.latitude] }
+        })) : [];
+        sc.load(points as any);
+        return sc;
+    }, [filteredPlaces, activeLayers]);
+
     useEffect(() => {
-        if (supercluster && region) {
+        if (region) {
             const bbox = [
                 region.longitude - region.longitudeDelta / 2,
                 region.latitude - region.latitudeDelta / 2,
@@ -395,10 +463,14 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 region.latitude + region.latitudeDelta / 2,
             ];
             const zoom = Math.round(Math.log(360 / region.longitudeDelta) / Math.LN2);
-            const cl = supercluster.getClusters(bbox as any, zoom);
-            setClusters(cl);
+            if (supercluster) {
+                setClusters(supercluster.getClusters(bbox as any, zoom));
+            }
+            if (placeSupercluster) {
+                setPlaceClusters(placeSupercluster.getClusters(bbox as any, zoom));
+            }
         }
-    }, [supercluster, region]);
+    }, [supercluster, placeSupercluster, region]);
 
     // Animate panel when selection changes
     useEffect(() => {
@@ -411,7 +483,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     }, [selectedItem]);
 
     const handleSelectRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const handleSelect = useCallback((type: 'event' | 'place' | 'person', data: any, lat: number, lng: number) => {
+    const handleSelect = useCallback((type: 'event' | 'place' | 'person', data: any, _lat: number, _lng: number) => {
         // Prevent extremely rapid consecutive taps from causing a native bridge crash
         const now = Date.now();
         if (now - lastMarkerPress.current < 300) return;
@@ -421,15 +493,8 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         
         setSelectedItem({ type, data });
         setIsMinimized(false);
-        handleSelectRef.current = setTimeout(() => {
-            mapRef.current?.animateToRegion({
-                latitude: lat - (region.latitudeDelta * 0.25),
-                longitude: lng,
-                latitudeDelta: Math.min(region.latitudeDelta, 0.02),
-                longitudeDelta: Math.min(region.longitudeDelta, 0.02),
-            }, 400);
-        }, 100);
-    }, [region]);
+        // Do NOT pan or zoom the map — respect user's current view
+    }, []);
 
     if (hasLocationPermission === null) {
         return <View style={[styles.container, styles.centered]}><ActivityIndicator size="large" color={Colors.primary} /></View>;
@@ -458,37 +523,62 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return (
         <View style={styles.container}>
             {/* Map styling using dark mode from JSON is typically passed via customMapStyle, we use standard style with darker mode if we had the JSON, but fallback is ok */}
-            <MapView
+            <MapLibreGL.MapView
                 ref={mapRef}
                 style={styles.map}
-                provider={Platform.OS === 'android' ? PROVIDER_GOOGLE : undefined}
-                initialRegion={region}
-                onRegionChangeComplete={(r) => {
-                    // Avoid updating state if the map is just finishing an animation to a selected item
-                    // to prevent "teleporting" and jitter
-                    if (Date.now() - lastMarkerPress.current > 600) {
-                        setRegion(r);
+                mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
+                logoEnabled={false}
+                attributionEnabled={false}
+                compassEnabled={false}
+                onRegionIsChanging={(e) => {
+                    mapZoomAnim.setValue(e.properties.zoomLevel);
+                }}
+                onRegionDidChange={(e) => {
+                    const coords = e.geometry.coordinates;
+                    const bounds = e.properties.visibleBounds;
+                    if (coords && bounds) {
+                        const [ne, sw] = bounds;
+                        setRegion({
+                            latitude: coords[1],
+                            longitude: coords[0],
+                            latitudeDelta: Math.abs(ne[1] - sw[1]),
+                            longitudeDelta: Math.abs(ne[0] - sw[0]),
+                        });
                     }
                 }}
-                showsUserLocation
-                showsMyLocationButton={false}
                 onPress={() => {
                     if (Date.now() - lastMarkerPress.current < 500) return;
                     setSelectedItem(null);
-                    setIsMinimized(false);
-                }} // deselect on map click
+                    setIsMinimized(true);
+                }}
             >
-                {/* Heatmap Layer for Events/Persons -> mapped as fuzzy circles for performance */}
-                {(activeLayers.includes('eventos') || activeLayers.includes('pessoas')) && filteredHeatZones.map(zone => (
-                    <Circle
-                        key={`heat-${zone.id}`}
-                        center={{ latitude: zone.latitude, longitude: zone.longitude }}
-                        radius={800 * zone.intensity}
-                        fillColor={`rgba(${activeLayers.includes('eventos') ? '255, 80, 40' : '70, 130, 255'}, ${0.15 * zone.intensity})`}
-                        strokeWidth={0}
-                        strokeColor="transparent"
-                    />
-                ))}
+                <MapLibreGL.Camera
+                    ref={cameraRef}
+                    defaultSettings={{
+                        centerCoordinate: [userLocation.longitude, userLocation.latitude],
+                        zoomLevel: 13,
+                    }}
+                />
+
+                <MapLibreGL.UserLocation visible={true} showsUserHeadingIndicator={true} />
+
+                {/* Heatmap Zones - MapLibre ShapeSource (Circles) */}
+                <MapLibreGL.ShapeSource id="heat-zones"
+                    shape={{
+                        type: 'FeatureCollection',
+                        features: MOCK_HEAT_ZONES.filter(zone => getDistance(userLocation.latitude, userLocation.longitude, zone.latitude, zone.longitude) < 20).map(zone => ({
+                            type: 'Feature',
+                            geometry: { type: 'Point', coordinates: [zone.longitude, zone.latitude] },
+                            properties: { intensity: zone.intensity, id: zone.id }
+                        }))
+                    }}>
+                    <MapLibreGL.CircleLayer id="heat-circles" style={{
+                        circleRadius: ['*', ['get', 'intensity'], 80],
+                        circleColor: activeLayers.includes('eventos') ? 'rgba(255, 80, 40, 1)' : 'rgba(70, 130, 255, 1)',
+                        circleOpacity: 0.15,
+                        circleStrokeWidth: 0,
+                    }} />
+                </MapLibreGL.ShapeSource>
 
                 {/* Event Clusters & Markers */}
                 {activeLayers.includes('eventos') && clusters.map(cluster => {
@@ -496,60 +586,63 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     const isCluster = cluster.properties.cluster;
                     if (isCluster) {
                         return (
-                            <StaticMarker key={`cluster-${cluster.id}`} coordinate={{ latitude, longitude }}
-                                onPress={() => {
-                                    const zoom = Math.round(Math.log(360 / region.longitudeDelta) / Math.LN2);
-                                    mapRef.current?.animateToRegion({ latitude, longitude, latitudeDelta: region.latitudeDelta / 2, longitudeDelta: region.longitudeDelta / 2 });
-                                }}
-                            >
-                                <ClusterPin count={cluster.properties.point_count} />
-                            </StaticMarker>
+                            <MapLibreGL.MarkerView key={`cluster-${cluster.properties.cluster_id}`} coordinate={[longitude, latitude]}>
+                                <TouchableOpacity activeOpacity={0.8} onPress={() => {
+                                    cameraRef.current?.setCamera({ centerCoordinate: [longitude, latitude], zoomLevel: 16, animationDuration: 400 });
+                                }}>
+                                    <ClusterPin count={cluster.properties.point_count} zoomAnim={mapZoomAnim} />
+                                </TouchableOpacity>
+                            </MapLibreGL.MarkerView>
                         );
                     }
                     const event = cluster.properties.event;
                     return (
-                        <StaticMarker key={`event-${event.id}`} coordinate={{ latitude, longitude }}
-                            onPress={() => handleSelect('event', event, latitude, longitude)}
-                        >
-                            <EventPin event={event} />
-                        </StaticMarker>
+                        <MapLibreGL.MarkerView key={`event-${event.id}`} coordinate={[longitude, latitude]}>
+                            <TouchableOpacity activeOpacity={0.8} onPress={() => handleSelect('event', event, latitude, longitude)}>
+                                <EventPin event={event} zoomAnim={mapZoomAnim} />
+                            </TouchableOpacity>
+                        </MapLibreGL.MarkerView>
                     );
                 })}
 
-                {/* Place Markers */}
-                {activeLayers.includes('lugares') && filteredPlaces.map((place) => (
-                    <StaticMarker key={`place-${place.id}`} coordinate={{ latitude: place.latitude, longitude: place.longitude }}
-                        onPress={() => handleSelect('place', place, place.latitude, place.longitude)}
-                    >
-                        <PlacePin place={place} />
-                    </StaticMarker>
-                ))}
+                {/* Place Clusters & Markers */}
+                {activeLayers.includes('lugares') && placeClusters.map(cluster => {
+                    const [longitude, latitude] = cluster.geometry.coordinates;
+                    const isCluster = cluster.properties.cluster;
+                    if (isCluster) {
+                        return (
+                            <MapLibreGL.MarkerView key={`place-cluster-${cluster.properties.cluster_id}`} coordinate={[longitude, latitude]}>
+                                <TouchableOpacity activeOpacity={0.8} onPress={() => {
+                                    cameraRef.current?.setCamera({ centerCoordinate: [longitude, latitude], zoomLevel: (region ? Math.round(Math.log(360 / region.longitudeDelta) / Math.LN2) : 13) + 3, animationDuration: 400 });
+                                }}>
+                                    <PlaceClusterPin count={cluster.properties.point_count} zoomAnim={mapZoomAnim} />
+                                </TouchableOpacity>
+                            </MapLibreGL.MarkerView>
+                        );
+                    }
+                    const place = cluster.properties.place;
+                    const distKm = getDistance(userLocation.latitude, userLocation.longitude, place.latitude, place.longitude);
+                    return (
+                        <MapLibreGL.MarkerView key={`place-${place.id}`} coordinate={[longitude, latitude]}>
+                            <TouchableOpacity activeOpacity={0.8} onPress={() => handleSelect('place', place, latitude, longitude)}>
+                                <PlacePin place={place} distance={distKm} zoomAnim={mapZoomAnim} />
+                            </TouchableOpacity>
+                        </MapLibreGL.MarkerView>
+                    );
+                })}
 
                 {/* Person Markers */}
-                {activeLayers.includes('pessoas') && filteredUsers.map((person) => {
-                    const ago = Date.now() - new Date(person.lastActive).getTime();
-                    if (ago > 10 * 60 * 1000) return null;
-                    return (
-                        <StaticMarker key={`person-${person.id}`} coordinate={{ latitude: person.latitude, longitude: person.longitude }}
-                            onPress={() => handleSelect('person', person, person.latitude, person.longitude)}
-                        >
-                            <PersonPin person={person} />
-                        </StaticMarker>
-                    );
-                })}
+                {activeLayers.includes('pessoas') && filteredUsers
+                    .filter((person) => Date.now() - new Date(person.lastActive).getTime() <= 10 * 60 * 1000)
+                    .map((person) => (
+                        <MapLibreGL.MarkerView key={`person-${person.id}`} coordinate={[person.longitude, person.latitude]}>
+                            <TouchableOpacity activeOpacity={0.8} onPress={() => handleSelect('person', person, person.latitude, person.longitude)}>
+                                <PersonPin person={person} zoomAnim={mapZoomAnim} />
+                            </TouchableOpacity>
+                        </MapLibreGL.MarkerView>
+                    ))}
 
-                {/* Native Circle highlight for selected item */}
-                {selectedItem && selectedItem.data.latitude != null && selectedItem.data.longitude != null && (
-                    <Circle
-                        key="selection-highlight-circle"
-                        center={{ latitude: selectedItem.data.latitude, longitude: selectedItem.data.longitude }}
-                        radius={35}
-                        fillColor={selectedItem.type === 'event' ? 'rgba(255, 80, 40, 0.20)' : selectedItem.type === 'place' ? 'rgba(40, 200, 120, 0.25)' : 'rgba(70, 130, 255, 0.25)'}
-                        strokeColor={selectedItem.type === 'event' ? 'rgba(255, 80, 40, 0.5)' : selectedItem.type === 'place' ? 'rgba(40, 200, 120, 0.5)' : 'rgba(70, 130, 255, 0.5)'}
-                        strokeWidth={2}
-                    />
-                )}
-            </MapView>
+            </MapLibreGL.MapView>
 
             {/* Layer Chips */}
             <View style={[styles.layerChipsContainer, { top: insets.top + 8 }]} pointerEvents="box-none">
@@ -580,9 +673,10 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 <TouchableOpacity
                     style={styles.locationButton}
                     onPress={() => {
-                        mapRef.current?.animateToRegion({
-                            latitude: userLocation.latitude, longitude: userLocation.longitude,
-                            latitudeDelta: 0.02, longitudeDelta: 0.02,
+                        cameraRef.current?.setCamera({
+                            centerCoordinate: [userLocation.longitude, userLocation.latitude],
+                            zoomLevel: 15,
+                            animationDuration: 500
                         });
                     }}
                 >

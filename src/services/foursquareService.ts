@@ -69,7 +69,7 @@ export const foursquareService = {
                 v: VERSION_DATE,
                 ll: `${latitude},${longitude}`,
                 radius: radius.toString(),
-                limit: '20',
+                limit: '50',
                 venuePhotos: '1',
             });
 
