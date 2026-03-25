@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions, Platform, Linking, ActivityIndicator, Animated, Image, ScrollView, PanResponder } from 'react-native';
-import MapLibreGL from '@maplibre/maplibre-react-native';
+import MapView, { Marker, Circle } from 'react-native-maps';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Shadows, BorderRadius } from '../../config/theme';
 import { Text } from '@/src/components/ui/text';
@@ -20,7 +20,7 @@ import Supercluster from 'supercluster';
 
 const { width, height } = Dimensions.get('window');
 
-MapLibreGL.setAccessToken(null);
+
 
 // -------------------------------------------------------------
 // Helper: Event Pin (Teardrop) — FULLY STATIC, no isSelected
@@ -252,8 +252,7 @@ function matchPlaceCategory(tipo: string, category: string): boolean {
 export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const { events } = useEventsStore();
-    const cameraRef = useRef<React.ElementRef<typeof MapLibreGL.Camera>>(null);
-    const mapRef = useRef<React.ElementRef<typeof MapLibreGL.MapView>>(null);
+    const mapRef = useRef<MapView>(null);
     const [activeLayers, setActiveLayers] = useState<MapLayer[]>(['eventos', 'pessoas']);
     const [foursquarePlaces, setFoursquarePlaces] = useState<Place[]>([]);
     const { activeUsers, setActiveUsers } = usePresenceStore();
@@ -490,7 +489,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         lastMarkerPress.current = now;
 
         if (handleSelectRef.current) clearTimeout(handleSelectRef.current);
-        
+
         setSelectedItem({ type, data });
         setIsMinimized(false);
         // Do NOT pan or zoom the map — respect user's current view
@@ -523,28 +522,25 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     return (
         <View style={styles.container}>
             {/* Map styling using dark mode from JSON is typically passed via customMapStyle, we use standard style with darker mode if we had the JSON, but fallback is ok */}
-            <MapLibreGL.MapView
+            <MapView
                 ref={mapRef}
                 style={styles.map}
-                mapStyle="https://basemaps.cartocdn.com/gl/positron-gl-style/style.json"
-                logoEnabled={false}
-                attributionEnabled={false}
-                compassEnabled={false}
-                onRegionIsChanging={(e) => {
-                    mapZoomAnim.setValue(e.properties.zoomLevel);
+                showsUserLocation={true}
+                showsCompass={false}
+                initialRegion={{
+                    latitude: userLocation.latitude,
+                    longitude: userLocation.longitude,
+                    latitudeDelta: 0.05,
+                    longitudeDelta: 0.05,
                 }}
-                onRegionDidChange={(e) => {
-                    const coords = e.geometry.coordinates;
-                    const bounds = e.properties.visibleBounds;
-                    if (coords && bounds) {
-                        const [ne, sw] = bounds;
-                        setRegion({
-                            latitude: coords[1],
-                            longitude: coords[0],
-                            latitudeDelta: Math.abs(ne[1] - sw[1]),
-                            longitudeDelta: Math.abs(ne[0] - sw[0]),
-                        });
-                    }
+                onRegionChange={(reg) => {
+                    const zoom = Math.round(Math.log(360 / reg.longitudeDelta) / Math.LN2);
+                    mapZoomAnim.setValue(zoom);
+                }}
+                onRegionChangeComplete={(reg) => {
+                    setRegion(reg);
+                    const zoom = Math.round(Math.log(360 / reg.longitudeDelta) / Math.LN2);
+                    mapZoomAnim.setValue(zoom);
                 }}
                 onPress={() => {
                     if (Date.now() - lastMarkerPress.current < 500) return;
@@ -552,33 +548,16 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     setIsMinimized(true);
                 }}
             >
-                <MapLibreGL.Camera
-                    ref={cameraRef}
-                    defaultSettings={{
-                        centerCoordinate: [userLocation.longitude, userLocation.latitude],
-                        zoomLevel: 13,
-                    }}
-                />
-
-                <MapLibreGL.UserLocation visible={true} showsUserHeadingIndicator={true} />
-
-                {/* Heatmap Zones - MapLibre ShapeSource (Circles) */}
-                <MapLibreGL.ShapeSource id="heat-zones"
-                    shape={{
-                        type: 'FeatureCollection',
-                        features: MOCK_HEAT_ZONES.filter(zone => getDistance(userLocation.latitude, userLocation.longitude, zone.latitude, zone.longitude) < 20).map(zone => ({
-                            type: 'Feature',
-                            geometry: { type: 'Point', coordinates: [zone.longitude, zone.latitude] },
-                            properties: { intensity: zone.intensity, id: zone.id }
-                        }))
-                    }}>
-                    <MapLibreGL.CircleLayer id="heat-circles" style={{
-                        circleRadius: ['*', ['get', 'intensity'], 80],
-                        circleColor: activeLayers.includes('eventos') ? 'rgba(255, 80, 40, 1)' : 'rgba(70, 130, 255, 1)',
-                        circleOpacity: 0.15,
-                        circleStrokeWidth: 0,
-                    }} />
-                </MapLibreGL.ShapeSource>
+                {/* Heatmap Zones - React Native Maps Circles */}
+                {MOCK_HEAT_ZONES.filter(zone => getDistance(userLocation.latitude, userLocation.longitude, zone.latitude, zone.longitude) < 20).map(zone => (
+                    <Circle
+                        key={`heat-${zone.id}`}
+                        center={{ latitude: zone.latitude, longitude: zone.longitude }}
+                        radius={zone.intensity * 400}
+                        fillColor={activeLayers.includes('eventos') ? 'rgba(255, 80, 40, 0.15)' : 'rgba(70, 130, 255, 0.15)'}
+                        strokeWidth={0}
+                    />
+                ))}
 
                 {/* Event Clusters & Markers */}
                 {activeLayers.includes('eventos') && clusters.map(cluster => {
@@ -586,22 +565,18 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     const isCluster = cluster.properties.cluster;
                     if (isCluster) {
                         return (
-                            <MapLibreGL.MarkerView key={`cluster-${cluster.properties.cluster_id}`} coordinate={[longitude, latitude]}>
-                                <TouchableOpacity activeOpacity={0.8} onPress={() => {
-                                    cameraRef.current?.setCamera({ centerCoordinate: [longitude, latitude], zoomLevel: 16, animationDuration: 400 });
-                                }}>
-                                    <ClusterPin count={cluster.properties.point_count} zoomAnim={mapZoomAnim} />
-                                </TouchableOpacity>
-                            </MapLibreGL.MarkerView>
+                            <Marker key={`cluster-${cluster.properties.cluster_id}`} coordinate={{ latitude, longitude }} tracksViewChanges={false} onPress={() => {
+                                mapRef.current?.animateCamera({ center: { latitude, longitude }, zoom: 16 }, { duration: 400 });
+                            }}>
+                                <ClusterPin count={cluster.properties.point_count} zoomAnim={mapZoomAnim} />
+                            </Marker>
                         );
                     }
                     const event = cluster.properties.event;
                     return (
-                        <MapLibreGL.MarkerView key={`event-${event.id}`} coordinate={[longitude, latitude]}>
-                            <TouchableOpacity activeOpacity={0.8} onPress={() => handleSelect('event', event, latitude, longitude)}>
-                                <EventPin event={event} zoomAnim={mapZoomAnim} />
-                            </TouchableOpacity>
-                        </MapLibreGL.MarkerView>
+                        <Marker key={`event-${event.id}`} coordinate={{ latitude, longitude }} tracksViewChanges={false} onPress={() => handleSelect('event', event, latitude, longitude)}>
+                            <EventPin event={event} zoomAnim={mapZoomAnim} />
+                        </Marker>
                     );
                 })}
 
@@ -611,23 +586,19 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     const isCluster = cluster.properties.cluster;
                     if (isCluster) {
                         return (
-                            <MapLibreGL.MarkerView key={`place-cluster-${cluster.properties.cluster_id}`} coordinate={[longitude, latitude]}>
-                                <TouchableOpacity activeOpacity={0.8} onPress={() => {
-                                    cameraRef.current?.setCamera({ centerCoordinate: [longitude, latitude], zoomLevel: (region ? Math.round(Math.log(360 / region.longitudeDelta) / Math.LN2) : 13) + 3, animationDuration: 400 });
-                                }}>
-                                    <PlaceClusterPin count={cluster.properties.point_count} zoomAnim={mapZoomAnim} />
-                                </TouchableOpacity>
-                            </MapLibreGL.MarkerView>
+                            <Marker key={`place-cluster-${cluster.properties.cluster_id}`} coordinate={{ latitude, longitude }} tracksViewChanges={false} onPress={() => {
+                                mapRef.current?.animateCamera({ center: { latitude, longitude }, zoom: (region ? Math.round(Math.log(360 / region.longitudeDelta) / Math.LN2) : 13) + 3 }, { duration: 400 });
+                            }}>
+                                <PlaceClusterPin count={cluster.properties.point_count} zoomAnim={mapZoomAnim} />
+                            </Marker>
                         );
                     }
                     const place = cluster.properties.place;
                     const distKm = getDistance(userLocation.latitude, userLocation.longitude, place.latitude, place.longitude);
                     return (
-                        <MapLibreGL.MarkerView key={`place-${place.id}`} coordinate={[longitude, latitude]}>
-                            <TouchableOpacity activeOpacity={0.8} onPress={() => handleSelect('place', place, latitude, longitude)}>
-                                <PlacePin place={place} distance={distKm} zoomAnim={mapZoomAnim} />
-                            </TouchableOpacity>
-                        </MapLibreGL.MarkerView>
+                        <Marker key={`place-${place.id}`} coordinate={{ latitude, longitude }} tracksViewChanges={false} onPress={() => handleSelect('place', place, latitude, longitude)}>
+                            <PlacePin place={place} distance={distKm} zoomAnim={mapZoomAnim} />
+                        </Marker>
                     );
                 })}
 
@@ -635,14 +606,12 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 {activeLayers.includes('pessoas') && filteredUsers
                     .filter((person) => Date.now() - new Date(person.lastActive).getTime() <= 10 * 60 * 1000)
                     .map((person) => (
-                        <MapLibreGL.MarkerView key={`person-${person.id}`} coordinate={[person.longitude, person.latitude]}>
-                            <TouchableOpacity activeOpacity={0.8} onPress={() => handleSelect('person', person, person.latitude, person.longitude)}>
-                                <PersonPin person={person} zoomAnim={mapZoomAnim} />
-                            </TouchableOpacity>
-                        </MapLibreGL.MarkerView>
+                        <Marker key={`person-${person.id}`} coordinate={{ latitude: person.latitude, longitude: person.longitude }} tracksViewChanges={false} onPress={() => handleSelect('person', person, person.latitude, person.longitude)}>
+                            <PersonPin person={person} zoomAnim={mapZoomAnim} />
+                        </Marker>
                     ))}
 
-            </MapLibreGL.MapView>
+            </MapView>
 
             {/* Layer Chips */}
             <View style={[styles.layerChipsContainer, { top: insets.top + 8 }]} pointerEvents="box-none">
@@ -673,11 +642,10 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 <TouchableOpacity
                     style={styles.locationButton}
                     onPress={() => {
-                        cameraRef.current?.setCamera({
-                            centerCoordinate: [userLocation.longitude, userLocation.latitude],
-                            zoomLevel: 15,
-                            animationDuration: 500
-                        });
+                        mapRef.current?.animateCamera({
+                            center: { latitude: userLocation.latitude, longitude: userLocation.longitude },
+                            zoom: 15
+                        }, { duration: 500 });
                     }}
                 >
                     <Ionicons name="navigate" size={20} color="#1F2937" />
