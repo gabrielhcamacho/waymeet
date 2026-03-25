@@ -1,8 +1,7 @@
 // Bitmoji Deluxe (style=5) - Full body avatars via libmoji / Bitmoji API
 // This supports granular customizaton of tops, bottoms, shoes, etc.
 
-export type AvatarConfig = Record<string, string> & { 
-    gender: string;
+export type AvatarConfig = Record<string, string> & {
     style: string;
     skin_tone: string;
     hair: string;
@@ -14,9 +13,7 @@ export type AvatarConfig = Record<string, string> & {
     nose: string;
     beard: string;
     body: string;
-    top: string;
-    bottom: string;
-    footwear: string;
+    outfit: string;
     backgroundColor: string;
     face_proportion: string;
     eye_spacing: string;
@@ -25,7 +22,6 @@ export type AvatarConfig = Record<string, string> & {
 
 // ─── Ordered categories (used for tabs) ──────────────────────────────────────
 export const AVATAR_CATEGORY_ORDER = [
-    'gender',
     'skin_tone',
     'hair',
     'hair_tone',
@@ -36,9 +32,7 @@ export const AVATAR_CATEGORY_ORDER = [
     'mouth',
     'beard',
     'body',
-    'top',
-    'bottom',
-    'footwear',
+    'outfit',
     'backgroundColor',
 ] as const;
 
@@ -46,7 +40,6 @@ export type Category = (typeof AVATAR_CATEGORY_ORDER)[number];
 
 // ─── Icons for each category tab ─────────────────────────────────────────────
 export const AVATAR_CATEGORY_ICONS: Record<Category, string> = {
-    gender: 'person-outline',
     skin_tone: 'color-filter-outline',
     hair: 'cut-outline',
     hair_tone: 'color-palette-outline',
@@ -57,15 +50,12 @@ export const AVATAR_CATEGORY_ICONS: Record<Category, string> = {
     mouth: 'happy-outline',
     beard: 'man-outline',
     body: 'body-outline',
-    top: 'shirt-outline',
-    bottom: 'footsteps-outline',
-    footwear: 'walk-outline',
+    outfit: 'shirt-outline',
     backgroundColor: 'image-outline',
 };
 
 // ─── Human-readable category labels ─────────────────────────────────────────
 export const CATEGORY_LABELS: Record<Category, string> = {
-    gender: 'Gênero',
     skin_tone: 'Pele',
     hair: 'Cabelo',
     hair_tone: 'Cor do Cabelo',
@@ -76,9 +66,7 @@ export const CATEGORY_LABELS: Record<Category, string> = {
     mouth: 'Boca',
     beard: 'Barba',
     body: 'Corpo',
-    top: 'Camisa',
-    bottom: 'Calça',
-    footwear: 'Sapato',
+    outfit: 'Traje Completo',
     backgroundColor: 'Fundo',
 };
 
@@ -90,18 +78,14 @@ export const COLOR_CATEGORIES = new Set([
     'backgroundColor',
 ]);
 
-// ─── Generic Options (Background) ──────────────────────────────────────────
 export const GENERIC_OPTIONS = {
     backgroundColor: ['dbeafe', 'dcfce7', 'fef9c3', 'fce7f3', 'ede9fe', 'ffedd5', 'e0f2fe', 'fdf4ff', 'f8f9fa', 'ffffff', '1e293b'],
-    top: ['138', '140', '143', '146', '148', '153', '155', '157', '159', '1018506', '1018392', '1018507', '1018508', '1018509', '1018510'],
-    bottom: ['113', '114', '115', '116', '117', '118', '119', '120', '121', '122'],
-    footwear: ['348', '297', '344', '321', '274', '238', '253'],
+    outfit: ['1018544', '1018545', '1018548', '1018549', '1018550', '1018552', '1018553', '1018554'],
 };
 
 // ─── Style 5 / CM Options (Gender Specific) ───────────────────────────────
 export const AVATAR_OPTIONS_GENDERED: Record<string, Record<string, string[]>> = {
     '1': { // Male
-        gender: ['1'],
         skin_tone: ['9655597', '16764057', '11897407', '4732712', '9657655', '16691590', '13280865', '5451546', '11170379', '15838344'],
         hair: ['1305', '1328', '1302', '1330', '1346', '1723', '1711', '1306', '1721', '1722'],
         hair_tone: ['2039326', '2566954', '3613466', '4795690', '5587258', '7164990', '8672042', '10513945', '14133857', '16777164'],
@@ -114,7 +98,6 @@ export const AVATAR_OPTIONS_GENDERED: Record<string, Record<string, string[]>> =
         body: ['0', '1', '2', '3', '4'],
     },
     '2': { // Female
-        gender: ['2'],
         skin_tone: ['9655597', '16764057', '11897407', '4732712', '9657655', '16691590', '13280865', '5451546', '11170379', '15838344'],
         hair: ['1314', '1704', '1304', '1307', '1313', '1695', '1706', '1705', '1683', '1694'],
         hair_tone: ['2039326', '2566954', '3613466', '4795690', '5587258', '7164990', '8672042', '10513945', '14133857', '16777164'],
@@ -135,6 +118,56 @@ export const READABLE_LABELS: Record<string, Record<string, string>> = {
         '0': 'Normal', '1': 'Atlético', '2': 'Forte', '3': 'Magro', '4': 'Grande',
         '7': 'Feminino 1', '8': 'Feminino 2', '9': 'Feminino 3', '10': 'Feminino 4'
     },
+    beard: {
+        '-1': 'Nenhum',
+        '1343': 'Barba Cerrada',
+        '1344': 'Cavanhaque',
+        '1345': 'Barba Cheia',
+        '1628': 'Âncora',
+        '1629': 'Barba Média',
+        '1630': 'Bigode e Cavanhaque',
+        '2276': 'Barba Curta'
+    },
+    mouth: {
+        '2337': 'Sério',
+        '2338': 'Sorrindo',
+        '2339': 'Sorriso Aberto',
+        '2340': 'Suave',
+        '2341': 'Sorrindo Natural',
+        '2342': 'Sorriso Alegre'
+    },
+    hair: {
+        '1305': 'Curto Social',
+        '1328': 'Topete Casual',
+        '1302': 'Militar',
+        '1330': 'Franja Lateral',
+        '1346': 'Cacheado Curto',
+        '1723': 'Moicano Suave',
+        '1711': 'Degradê Fio',
+        '1306': 'Arrepiado',
+        '1721': 'Black Power',
+        '1722': 'Tranças Curtas',
+        '1314': 'Longo Liso',
+        '1704': 'Ondulado Médio',
+        '1304': 'Chanel',
+        '1307': 'Rabo de Cavalo',
+        '1313': 'Coque Alto',
+        '1695': 'Black Redondo',
+        '1706': 'Franja Reta',
+        '1705': 'Volume Natural',
+        '1683': 'Tranças Longas',
+        '1694': 'Pixie Cut'
+    },
+    outfit: {
+        '1018544': 'Clássico 1',
+        '1018545': 'Clássico 2',
+        '1018548': 'Inverno',
+        '1018549': 'Básico Dia a Dia',
+        '1018550': 'Casual',
+        '1018552': 'Despojado',
+        '1018553': 'Urbano',
+        '1018554': 'Streetwear'
+    }
 };
 
 // ─── Hex + name for mapping ──────────────────────────────────────────────────
@@ -178,8 +211,8 @@ export function buildBitmojiUrl(config: Partial<AvatarConfig>): string {
 
     // Traits
     const traits = [
-        'skin_tone', 'hair', 'hair_tone', 'eye', 'pupil_tone', 
-        'mouth', 'brow', 'nose', 'beard', 'body', 
+        'skin_tone', 'hair', 'hair_tone', 'eye', 'pupil_tone',
+        'mouth', 'brow', 'nose', 'beard', 'body',
         'face_proportion', 'eye_spacing', 'eye_size'
     ];
 
@@ -191,9 +224,9 @@ export function buildBitmojiUrl(config: Partial<AvatarConfig>): string {
     });
 
     // Clothing
-    if (config.top) params.set('top', config.top);
-    if (config.bottom) params.set('bottom', config.bottom);
-    if (config.footwear) params.set('footwear', config.footwear);
+    // Bitmoji V3 API for Style 5 uses full 'outfit' presets.
+    const outfitId = config.outfit || '1018544'; 
+    params.set('outfit', outfitId);
 
     return `${baseUrl}?${params.toString()}`;
 }
@@ -214,7 +247,6 @@ export function parseConfig(configStr: string | null): AvatarConfig {
 
 // ─── Default starting config ──────────────────────────────────────────────────
 export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
-    gender: '1',
     style: '5',
     skin_tone: '16764057',
     hair: '1305',
@@ -229,8 +261,6 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
     face_proportion: '1',
     eye_spacing: '1',
     eye_size: '1',
-    top: '138',
-    bottom: '113',
-    footwear: '348',
+    outfit: '1018544',
     backgroundColor: 'dbeafe',
 };
