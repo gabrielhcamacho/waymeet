@@ -62,8 +62,14 @@ export const AvatarOptionRow: React.FC<AvatarOptionRowProps> = ({
                 let label = READABLE_LABELS[category]?.[opt];
                 
                 if (!label) {
-                    // Fallback to "Opção N" for IDs or undocumented values
-                    label = opt === '-1' ? 'Nenhum' : `Opção ${index + 1}`;
+                    const prefix = category === 'hair' ? 'Corte' :
+                                   category === 'nose' ? 'Nariz' :
+                                   category === 'eye'  ? 'Olho' :
+                                   category === 'brow' ? 'Sobrancelha' :
+                                   category === 'mouth' ? 'Boca' :
+                                   category === 'beard' ? 'Barba' :
+                                   category === 'outfit' ? 'Traje' : 'Opção';
+                    label = opt === '-1' ? 'Nenhum' : `${prefix} ${index + 1}`;
                 }
 
                 return (

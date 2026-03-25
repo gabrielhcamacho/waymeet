@@ -127,9 +127,7 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
             mouth: pick(genderOptions.mouth),
             beard: pick(genderOptions.beard),
             body: pick(genderOptions.body),
-            top: pick(generic.top),
-            bottom: pick(generic.bottom),
-            footwear: pick(generic.footwear),
+            outfit: pick(generic.outfit),
             backgroundColor: pick(generic.backgroundColor),
         });
     };
@@ -198,6 +196,7 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                     <AvatarPreview
                         avatarUrl={bitmojiPreviewUrl}
                         backgroundColor={COLOR_LABELS[avatarConfig.backgroundColor]?.hex || avatarConfig.backgroundColor}
+                        isZoomed={new Set(['skin_tone', 'hair', 'hair_tone', 'eye', 'pupil_tone', 'brow', 'nose', 'mouth', 'beard', 'face_proportion', 'eye_spacing', 'eye_size']).has(activeAvatarCategory)}
                         onRandomize={handleRandomize}
                     />
 

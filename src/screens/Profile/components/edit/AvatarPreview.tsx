@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, TouchableOpacity, Dimensions } from 'react-native';
+import React, { useRef, useEffect } from 'react';
+import { View, TouchableOpacity, Dimensions, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Image } from 'expo-image';
 import { Text } from '@/src/components/ui/text';
@@ -10,11 +10,32 @@ const SCREEN_WIDTH = Dimensions.get('window').width;
 interface AvatarPreviewProps {
     avatarUrl: string | null;
     backgroundColor?: string;
+    isZoomed?: boolean;
     onRandomize: () => void;
 }
 
-export const AvatarPreview: React.FC<AvatarPreviewProps> = ({ avatarUrl, backgroundColor, onRandomize }) => {
+export const AvatarPreview: React.FC<AvatarPreviewProps> = ({ avatarUrl, backgroundColor, isZoomed, onRandomize }) => {
     const bgColor = backgroundColor ? `#${backgroundColor}` : '#dbeafe';
+
+    const zoomAnim = useRef(new Animated.Value(0)).current;
+
+    useEffect(() => {
+        Animated.timing(zoomAnim, {
+            toValue: isZoomed ? 1 : 0,
+            duration: 350,
+            useNativeDriver: true,
+        }).start();
+    }, [isZoomed]);
+
+    const scale = zoomAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [1, 2.2]
+    });
+
+    const translateY = zoomAnim.interpolate({
+        inputRange: [0, 1],
+        outputRange: [0, 80]
+    });
 
     return (
         <View className="items-center mb-4">
@@ -27,11 +48,13 @@ export const AvatarPreview: React.FC<AvatarPreviewProps> = ({ avatarUrl, backgro
                 }}
             >
                 {avatarUrl ? (
-                    <Image
-                        source={{ uri: avatarUrl }}
-                        style={{ width: '85%', height: '95%' }}
-                        contentFit="contain"
-                    />
+                    <Animated.View style={{ width: '85%', height: '95%', transform: [{ scale }, { translateY }] }}>
+                        <Image
+                            source={{ uri: avatarUrl }}
+                            style={{ width: '100%', height: '100%' }}
+                            contentFit="contain"
+                        />
+                    </Animated.View>
                 ) : (
                     <Ionicons name="person" size={80} color={Colors.text} style={{ opacity: 0.15 }} />
                 )}
