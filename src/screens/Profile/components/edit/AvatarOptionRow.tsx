@@ -32,7 +32,6 @@ export const AvatarOptionRow: React.FC<AvatarOptionRowProps> = ({
                 {options.map((opt, index) => {
                     const isSelected = selectedValue === opt;
                     const colorInfo = COLOR_LABELS[opt];
-                    // If no color info, use a neutral gray for internal IDs, or the value itself if it looks like hex
                     const swatchColor = colorInfo?.hex ?? (opt.length === 6 ? `#${opt}` : '#E5E7EB');
 
                     return (
@@ -57,28 +56,18 @@ export const AvatarOptionRow: React.FC<AvatarOptionRowProps> = ({
 
     return (
         <View className="flex-row flex-wrap px-4 py-3 gap-2">
-            {options.map((opt, index) => {
+            {options.map((opt) => {
                 const isSelected = selectedValue === opt;
-                let label = READABLE_LABELS[category]?.[opt];
-                
-                if (!label) {
-                    const prefix = category === 'hair' ? 'Corte' :
-                                   category === 'nose' ? 'Nariz' :
-                                   category === 'eye'  ? 'Olho' :
-                                   category === 'brow' ? 'Sobrancelha' :
-                                   category === 'mouth' ? 'Boca' :
-                                   category === 'beard' ? 'Barba' :
-                                   category === 'outfit' ? 'Traje' : 'Opção';
-                    label = opt === '-1' ? 'Nenhum' : `${prefix} ${index + 1}`;
-                }
+                // All labels must come from READABLE_LABELS — no "Olho 1", "Barba 2", etc.
+                const label = READABLE_LABELS[category]?.[opt] ?? opt;
 
                 return (
                     <TouchableOpacity
                         key={opt}
                         onPress={() => onSelect(category, opt)}
                         className={`px-4 py-2.5 rounded-xl border ${isSelected
-                            ? 'bg-orange-50 border-orange-500'
-                            : 'bg-gray-50 border-gray-200'
+                                ? 'bg-orange-50 border-orange-500'
+                                : 'bg-gray-50 border-gray-200'
                             }`}
                     >
                         <Text className={`text-[13px] ${isSelected ? 'font-bold text-orange-600' : 'text-gray-600'}`}>

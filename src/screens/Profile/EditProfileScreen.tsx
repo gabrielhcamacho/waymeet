@@ -2,7 +2,7 @@ import { Colors } from '../../config/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/src/components/ui/text';
 import * as ImagePicker from 'expo-image-picker';
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { TextField } from './components/edit/TextField';
 import { PhotoHeader } from './components/edit/PhotoHeader';
 import { TabSwitcher } from './components/edit/TabSwitcher';
@@ -13,8 +13,9 @@ import { CategorySelector } from './components/edit/CategorySelector';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { View, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import {
-    AVATAR_OPTIONS_GENDERED,
-    GENERIC_OPTIONS,
+    AVATAR_OPTIONS,
+    HAIR_GENDER,
+    BODY_GENDER,
     AVATAR_CATEGORY_ORDER,
     AVATAR_CATEGORY_ICONS,
     CATEGORY_LABELS,
@@ -42,37 +43,15 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
     const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(() =>
         parseConfig(user?.secondaryAvatarSeed || ''),
     );
-    const [activeAvatarCategory, setActiveAvatarCategory] = useState<typeof AVATAR_CATEGORY_ORDER[number]>(AVATAR_CATEGORY_ORDER[0]);
+    const [activeAvatarCategory, setActiveAvatarCategory] = useState<typeof AVATAR_CATEGORY_ORDER[number]>(
+        AVATAR_CATEGORY_ORDER[0],
+    );
 
-    // This is the generated Bitmoji preview URL
     const bitmojiPreviewUrl = useMemo(() => buildBitmojiUrl(avatarConfig), [avatarConfig]);
 
-    // Handle initial gender setup or trait validation if gender changes
-    useEffect(() => {
-        const genderOptions = AVATAR_OPTIONS_GENDERED[avatarConfig.gender];
-        if (!genderOptions) return;
-
-        // Ensure current traits are valid for this gender (mostly for hair/beard/brow/mouth)
-        const checkTraits = ['hair', 'brow', 'mouth', 'beard', 'body'];
-        let needsUpdate = false;
-        const newConfig = { ...avatarConfig };
-
-        checkTraits.forEach(trait => {
-            const options = genderOptions[trait];
-            if (options && !options.includes(newConfig[trait])) {
-                newConfig[trait] = options[0];
-                needsUpdate = true;
-            }
-        });
-
-        if (needsUpdate) {
-            setAvatarConfig(newConfig);
-        }
-    }, [avatarConfig.gender]);
-
     const toggleCategory = (id: string) =>
-        setSelectedCategories((prev) =>
-            prev.includes(id) ? prev.filter((c) => c !== id) : [...prev, id],
+        setSelectedCategories(prev =>
+            prev.includes(id) ? prev.filter(c => c !== id) : [...prev, id],
         );
 
     const pickImage = async (type: 'avatar' | 'cover') => {
@@ -109,39 +88,52 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
     };
 
     const handleRandomize = () => {
-        const pick = (arr: readonly string[]) => arr[Math.floor(Math.random() * arr.length)];
-        const gender = pick(['1', '2']);
-        const genderOptions = AVATAR_OPTIONS_GENDERED[gender];
-        const generic = GENERIC_OPTIONS;
+        const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+        const hair = pick(AVATAR_OPTIONS.hair);
+        const body = pick(AVATAR_OPTIONS.body);
+        // Sync gender from hair (hair takes priority)
+        const gender = HAIR_GENDER[hair] ?? BODY_GENDER[body] ?? '1';
 
         setAvatarConfig({
             ...DEFAULT_AVATAR_CONFIG,
             gender,
-            skin_tone: pick(genderOptions.skin_tone),
-            hair: pick(genderOptions.hair),
-            hair_tone: pick(genderOptions.hair_tone),
-            eye: pick(genderOptions.eye),
-            pupil_tone: pick(genderOptions.pupil_tone),
-            brow: pick(genderOptions.brow),
-            nose: pick(genderOptions.nose),
-            mouth: pick(genderOptions.mouth),
-            beard: pick(genderOptions.beard),
-            body: pick(genderOptions.body),
-            outfit: pick(generic.outfit),
-            backgroundColor: pick(generic.backgroundColor),
+            skin_tone: pick(AVATAR_OPTIONS.skin_tone),
+            hair,
+            hair_tone: pick(AVATAR_OPTIONS.hair_tone),
+            eye: pick(AVATAR_OPTIONS.eye),
+            pupil_tone: pick(AVATAR_OPTIONS.pupil_tone),
+            brow: pick(AVATAR_OPTIONS.brow),
+            nose: pick(AVATAR_OPTIONS.nose),
+            mouth: pick(AVATAR_OPTIONS.mouth),
+            beard: pick(AVATAR_OPTIONS.beard),
+            body,
+            outfit: pick(AVATAR_OPTIONS.outfit),
+            backgroundColor: pick(AVATAR_OPTIONS.backgroundColor),
         });
     };
 
+    // When the user selects a hair or body option, also update gender automatically
     const handleAvatarOptionSelect = (key: string, val: string) => {
-        setAvatarConfig((prev) => ({ ...prev, [key]: val }));
+        setAvatarConfig(prev => {
+            const next: AvatarConfig = { ...prev, [key]: val };
+
+            if (key === 'hair' && HAIR_GENDER[val]) {
+                next.gender = HAIR_GENDER[val];
+            } else if (key === 'body' && BODY_GENDER[val]) {
+                // Only update gender from body if hair doesn't already pin it
+                const hairGender = HAIR_GENDER[prev.hair];
+                if (!hairGender) next.gender = BODY_GENDER[val];
+            }
+
+            return next;
+        });
     };
 
-    // Get available options for current category and gender
-    const currentOptions = useMemo(() => {
-        const gender = avatarConfig.gender || '1';
-        const genderOptions = AVATAR_OPTIONS_GENDERED[gender] || AVATAR_OPTIONS_GENDERED['1'];
-        return genderOptions[activeAvatarCategory] || (GENERIC_OPTIONS as any)[activeAvatarCategory] || [];
-    }, [activeAvatarCategory, avatarConfig.gender]);
+    const currentOptions = useMemo(
+        () => AVATAR_OPTIONS[activeAvatarCategory] ?? [],
+        [activeAvatarCategory],
+    );
 
     return (
         <View className="flex-1 bg-white px-5" style={{ paddingTop: insets.top + 10 }}>
@@ -193,15 +185,21 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                 </ScrollView>
             ) : (
                 <View className="flex-1 mt-3">
-                    {/* Avatar Preview — Fixed on top */}
                     <AvatarPreview
                         avatarUrl={bitmojiPreviewUrl}
-                        backgroundColor={COLOR_LABELS[avatarConfig.backgroundColor]?.hex || avatarConfig.backgroundColor}
-                        isZoomed={new Set(['skin_tone', 'hair', 'hair_tone', 'eye', 'pupil_tone', 'brow', 'nose', 'mouth', 'beard', 'face_proportion', 'eye_spacing', 'eye_size']).has(activeAvatarCategory)}
+                        backgroundColor={
+                            COLOR_LABELS[avatarConfig.backgroundColor]?.hex ||
+                            avatarConfig.backgroundColor
+                        }
+                        isZoomed={new Set([
+                            'skin_tone', 'hair', 'hair_tone', 'eye', 'pupil_tone',
+                            'brow', 'nose', 'mouth', 'beard',
+                            'face_proportion', 'eye_spacing', 'eye_size',
+                        ]).has(activeAvatarCategory)}
                         onRandomize={handleRandomize}
                     />
 
-                    {/* Category Tabs — Horizontal scrollable icons */}
+                    {/* Category Tabs */}
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}
@@ -209,7 +207,7 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                         className="mb-2"
                         style={{ flexGrow: 0 }}
                     >
-                        {AVATAR_CATEGORY_ORDER.map((cat) => {
+                        {AVATAR_CATEGORY_ORDER.map(cat => {
                             const isActive = activeAvatarCategory === cat;
                             const iconName = AVATAR_CATEGORY_ICONS[cat] as keyof typeof Ionicons.glyphMap;
                             return (
@@ -238,12 +236,10 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                         })}
                     </ScrollView>
 
-                    {/* Category label */}
                     <Text className="text-sm font-bold text-text px-4 mt-2 mb-1">
                         {CATEGORY_LABELS[activeAvatarCategory]}
                     </Text>
 
-                    {/* Options for the active category */}
                     <ScrollView
                         showsVerticalScrollIndicator={false}
                         contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}
