@@ -15,7 +15,10 @@ interface AvatarPreviewProps {
 }
 
 export const AvatarPreview: React.FC<AvatarPreviewProps> = ({ avatarUrl, backgroundColor, isZoomed, onRandomize }) => {
-    const bgColor = backgroundColor ? `#${backgroundColor}` : '#dbeafe';
+    // backgroundColor might already have a '#' from COLOR_LABELS
+    const bgColor = backgroundColor
+        ? (backgroundColor.startsWith('#') ? backgroundColor : `#${backgroundColor}`)
+        : '#dbeafe';
 
     const zoomAnim = useRef(new Animated.Value(0)).current;
 
@@ -29,12 +32,12 @@ export const AvatarPreview: React.FC<AvatarPreviewProps> = ({ avatarUrl, backgro
 
     const scale = zoomAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [1, 2.2]
+        outputRange: [1, 2.8]
     });
 
     const translateY = zoomAnim.interpolate({
         inputRange: [0, 1],
-        outputRange: [0, 80]
+        outputRange: [0, 70]
     });
 
     return (

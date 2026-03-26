@@ -138,7 +138,8 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
 
     // Get available options for current category and gender
     const currentOptions = useMemo(() => {
-        const genderOptions = AVATAR_OPTIONS_GENDERED[avatarConfig.gender];
+        const gender = avatarConfig.gender || '1';
+        const genderOptions = AVATAR_OPTIONS_GENDERED[gender] || AVATAR_OPTIONS_GENDERED['1'];
         return genderOptions[activeAvatarCategory] || (GENERIC_OPTIONS as any)[activeAvatarCategory] || [];
     }, [activeAvatarCategory, avatarConfig.gender]);
 

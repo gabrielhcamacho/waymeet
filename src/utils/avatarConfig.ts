@@ -18,6 +18,7 @@ export type AvatarConfig = Record<string, string> & {
     face_proportion: string;
     eye_spacing: string;
     eye_size: string;
+    gender: string;
 };
 
 // ─── Ordered categories (used for tabs) ──────────────────────────────────────
@@ -263,4 +264,5 @@ export const DEFAULT_AVATAR_CONFIG: AvatarConfig = {
     eye_size: '1',
     outfit: '1018544',
     backgroundColor: 'dbeafe',
+    gender: '1',
 };
