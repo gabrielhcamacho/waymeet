@@ -15,7 +15,9 @@ import { View, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import {
     AVATAR_OPTIONS,
     HAIR_GENDER,
-    BODY_GENDER,
+    OUTFIT_GENDER,
+    getOutfitsByGender,
+    getDefaultOutfit,
     AVATAR_CATEGORY_ORDER,
     AVATAR_CATEGORY_ICONS,
     CATEGORY_LABELS,
@@ -47,7 +49,71 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
         AVATAR_CATEGORY_ORDER[0],
     );
 
+    // Current effective gender (driven by hair selection)
+    const currentGender = useMemo((): '1' | '2' => {
+        const hairG = HAIR_GENDER[avatarConfig.hair];
+        return hairG ?? (avatarConfig.gender as '1' | '2') ?? '1';
+    }, [avatarConfig.hair, avatarConfig.gender]);
+
     const bitmojiPreviewUrl = useMemo(() => buildBitmojiUrl(avatarConfig), [avatarConfig]);
+
+    // ── Options for the active category ───────────────────────────────────────
+    // For outfit: dynamically filtered by currentGender.
+    // For everything else: use the static AVATAR_OPTIONS list.
+    const currentOptions = useMemo(() => {
+        if (activeAvatarCategory === 'outfit') {
+            return getOutfitsByGender(currentGender);
+        }
+        return AVATAR_OPTIONS[activeAvatarCategory] ?? [];
+    }, [activeAvatarCategory, currentGender]);
+
+    // ── Selection handler ──────────────────────────────────────────────────────
+    const handleAvatarOptionSelect = (key: string, val: string) => {
+        setAvatarConfig(prev => {
+            const next: AvatarConfig = { ...prev, [key]: val };
+
+            if (key === 'hair') {
+                const newGender = HAIR_GENDER[val];
+                if (newGender) {
+                    next.gender = newGender;
+                    // If the current outfit doesn't belong to the new gender, reset it
+                    const validOutfits = getOutfitsByGender(newGender);
+                    if (!validOutfits.includes(prev.outfit)) {
+                        next.outfit = getDefaultOutfit(newGender);
+                    }
+                }
+            }
+
+            return next;
+        });
+    };
+
+    // ── Randomize ─────────────────────────────────────────────────────────────
+    const handleRandomize = () => {
+        const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
+
+        const hair = pick(AVATAR_OPTIONS.hair);
+        const gender = HAIR_GENDER[hair] ?? '1';
+        const body = pick(AVATAR_OPTIONS.body);
+        const outfit = pick(getOutfitsByGender(gender));
+
+        setAvatarConfig({
+            ...DEFAULT_AVATAR_CONFIG,
+            gender,
+            skin_tone: pick(AVATAR_OPTIONS.skin_tone),
+            hair,
+            hair_tone: pick(AVATAR_OPTIONS.hair_tone),
+            eye: pick(AVATAR_OPTIONS.eye),
+            pupil_tone: pick(AVATAR_OPTIONS.pupil_tone),
+            brow: pick(AVATAR_OPTIONS.brow),
+            nose: pick(AVATAR_OPTIONS.nose),
+            mouth: pick(AVATAR_OPTIONS.mouth),
+            beard: pick(AVATAR_OPTIONS.beard),
+            body,
+            outfit,
+            backgroundColor: pick(AVATAR_OPTIONS.backgroundColor),
+        });
+    };
 
     const toggleCategory = (id: string) =>
         setSelectedCategories(prev =>
@@ -86,54 +152,6 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
             { text: 'Excluir', style: 'destructive', onPress: () => deleteAccount() },
         ]);
     };
-
-    const handleRandomize = () => {
-        const pick = <T,>(arr: readonly T[]): T => arr[Math.floor(Math.random() * arr.length)];
-
-        const hair = pick(AVATAR_OPTIONS.hair);
-        const body = pick(AVATAR_OPTIONS.body);
-        // Sync gender from hair (hair takes priority)
-        const gender = HAIR_GENDER[hair] ?? BODY_GENDER[body] ?? '1';
-
-        setAvatarConfig({
-            ...DEFAULT_AVATAR_CONFIG,
-            gender,
-            skin_tone: pick(AVATAR_OPTIONS.skin_tone),
-            hair,
-            hair_tone: pick(AVATAR_OPTIONS.hair_tone),
-            eye: pick(AVATAR_OPTIONS.eye),
-            pupil_tone: pick(AVATAR_OPTIONS.pupil_tone),
-            brow: pick(AVATAR_OPTIONS.brow),
-            nose: pick(AVATAR_OPTIONS.nose),
-            mouth: pick(AVATAR_OPTIONS.mouth),
-            beard: pick(AVATAR_OPTIONS.beard),
-            body,
-            outfit: pick(AVATAR_OPTIONS.outfit),
-            backgroundColor: pick(AVATAR_OPTIONS.backgroundColor),
-        });
-    };
-
-    // When the user selects a hair or body option, also update gender automatically
-    const handleAvatarOptionSelect = (key: string, val: string) => {
-        setAvatarConfig(prev => {
-            const next: AvatarConfig = { ...prev, [key]: val };
-
-            if (key === 'hair' && HAIR_GENDER[val]) {
-                next.gender = HAIR_GENDER[val];
-            } else if (key === 'body' && BODY_GENDER[val]) {
-                // Only update gender from body if hair doesn't already pin it
-                const hairGender = HAIR_GENDER[prev.hair];
-                if (!hairGender) next.gender = BODY_GENDER[val];
-            }
-
-            return next;
-        });
-    };
-
-    const currentOptions = useMemo(
-        () => AVATAR_OPTIONS[activeAvatarCategory] ?? [],
-        [activeAvatarCategory],
-    );
 
     return (
         <View className="flex-1 bg-white px-5" style={{ paddingTop: insets.top + 10 }}>
@@ -257,3 +275,5 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
         </View>
     );
 };
+
+// ─── Internal helper (not exported) ───────────────────────────────────────────

@@ -22,62 +22,33 @@ export type AvatarConfig = Record<string, string> & {
 
 // ─── Ordered categories ───────────────────────────────────────────────────────
 export const AVATAR_CATEGORY_ORDER = [
-    'skin_tone',
-    'hair',
-    'hair_tone',
-    'eye',
-    'pupil_tone',
-    'brow',
-    'nose',
-    'mouth',
-    'beard',
-    'body',
-    'outfit',
-    'backgroundColor',
+    'skin_tone', 'hair', 'hair_tone', 'eye', 'pupil_tone',
+    'brow', 'nose', 'mouth', 'beard', 'body', 'outfit', 'backgroundColor',
 ] as const;
 
 export type Category = (typeof AVATAR_CATEGORY_ORDER)[number];
 
 export const AVATAR_CATEGORY_ICONS: Record<Category, string> = {
-    skin_tone: 'color-filter-outline',
-    hair: 'cut-outline',
-    hair_tone: 'color-palette-outline',
-    eye: 'eye-outline',
-    pupil_tone: 'color-wand-outline',
-    brow: 'remove-outline',
-    nose: 'ellipse-outline',
-    mouth: 'happy-outline',
-    beard: 'man-outline',
-    body: 'body-outline',
-    outfit: 'shirt-outline',
-    backgroundColor: 'image-outline',
+    skin_tone: 'color-filter-outline', hair: 'cut-outline',
+    hair_tone: 'color-palette-outline', eye: 'eye-outline',
+    pupil_tone: 'color-wand-outline', brow: 'remove-outline',
+    nose: 'ellipse-outline', mouth: 'happy-outline',
+    beard: 'man-outline', body: 'body-outline',
+    outfit: 'shirt-outline', backgroundColor: 'image-outline',
 };
 
 export const CATEGORY_LABELS: Record<Category, string> = {
-    skin_tone: 'Pele',
-    hair: 'Cabelo',
-    hair_tone: 'Cor do Cabelo',
-    eye: 'Olhos',
-    pupil_tone: 'Cor dos Olhos',
-    brow: 'Sobrancelha',
-    nose: 'Nariz',
-    mouth: 'Boca',
-    beard: 'Barba / Bigode',
-    body: 'Corpo',
-    outfit: 'Traje Completo',
-    backgroundColor: 'Fundo',
+    skin_tone: 'Pele', hair: 'Cabelo', hair_tone: 'Cor do Cabelo',
+    eye: 'Olhos', pupil_tone: 'Cor dos Olhos', brow: 'Sobrancelha',
+    nose: 'Nariz', mouth: 'Boca', beard: 'Barba / Bigode',
+    body: 'Corpo', outfit: 'Traje Completo', backgroundColor: 'Fundo',
 };
 
 export const COLOR_CATEGORIES = new Set([
-    'skin_tone',
-    'hair_tone',
-    'pupil_tone',
-    'backgroundColor',
+    'skin_tone', 'hair_tone', 'pupil_tone', 'backgroundColor',
 ]);
 
 // ─── Hair ─────────────────────────────────────────────────────────────────────
-// Each hair carries the gender required for correct rendering.
-// When the user picks a hair, avatarConfig.gender is updated automatically.
 export type HairEntry = { id: string; label: string; gender: '1' | '2' };
 
 export const HAIR_OPTIONS: HairEntry[] = [
@@ -113,28 +84,76 @@ export const HAIR_GENDER: Record<string, '1' | '2'> = Object.fromEntries(
 );
 
 // ─── Body ─────────────────────────────────────────────────────────────────────
-// VERIFIED from screenshots — corrected labels:
-//   gender=1: '0'=Normal, '3'=Esguio, '1'=Robusto(stocky/wide), '2'=Gorducho(heavy), '4'=Barrigudo
-//   gender=2: '8'=Esguia, '7'=Curvilínea, '10'=Alta e Fina, '9'=Cheia
-// Body gender must be synced to avatarConfig.gender when selected.
-export type BodyEntry = { id: string; label: string; gender: '1' | '2' };
+export type BodyEntry = { id: string; label: string };
 
 export const BODY_OPTIONS: BodyEntry[] = [
-    { id: '0', label: 'Normal', gender: '1' },
-    { id: '2', label: 'Gordo', gender: '1' },
-    { id: '7', label: 'Atlético', gender: '2' },
-    { id: '10', label: 'Forte', gender: '2' },
-    { id: '9', label: 'Magro', gender: '2' },
+    { id: '0', label: 'Normal' },
+    { id: '2', label: 'Gordo' },
+    { id: '7', label: 'Atlético' },
+    { id: '10', label: 'Forte' },
+    { id: '9', label: 'Magro' },
 ];
 
 export const BODY_LABEL: Record<string, string> = Object.fromEntries(
     BODY_OPTIONS.map(b => [b.id, b.label])
 );
-export const BODY_GENDER: Record<string, '1' | '2'> = Object.fromEntries(
-    BODY_OPTIONS.map(b => [b.id, b.gender])
+
+// ─── Outfits ──────────────────────────────────────────────────────────────────
+// Each outfit is tagged with its gender. The UI filters this list dynamically
+// based on avatarConfig.gender (which is driven by the selected hair).
+export type OutfitEntry = { id: string; label: string; gender: '1' | '2' };
+
+export const OUTFIT_OPTIONS: OutfitEntry[] = [
+    // ── Male ──────────────────────────────────────────────────────────────────
+    { id: '1018544', label: 'Casual Clássico', gender: '1' },
+    { id: '1018545', label: 'Social', gender: '1' },
+    { id: '1018548', label: 'Inverno', gender: '1' },
+    { id: '1018549', label: 'Básico', gender: '1' },
+    { id: '1018550', label: 'Esportivo', gender: '1' },
+    { id: '1018552', label: 'Despojado', gender: '1' },
+    { id: '1018553', label: 'Urbano', gender: '1' },
+    { id: '1018554', label: 'Streetwear', gender: '1' },
+    { id: '1018555', label: 'Jeans e Camiseta', gender: '1' },
+    { id: '1018556', label: 'Moletom', gender: '1' },
+    { id: '1018557', label: 'Camisa Xadrez', gender: '1' },
+    { id: '1018558', label: 'Regata', gender: '1' },
+    { id: '1018559', label: 'Terno', gender: '1' },
+    { id: '1018560', label: 'Colete', gender: '1' },
+    { id: '1018561', label: 'Polo', gender: '1' },
+    { id: '1018562', label: 'Agasalho', gender: '1' },
+    // ── Female ────────────────────────────────────────────────────────────────
+    { id: '1018563', label: 'Vestido Casual', gender: '2' },
+    { id: '1018564', label: 'Blusa Floral', gender: '2' },
+    { id: '1018565', label: 'Conjunto Esportivo', gender: '2' },
+    { id: '1018566', label: 'Camiseta e Saia', gender: '2' },
+    { id: '1018567', label: 'Jaqueta', gender: '2' },
+    { id: '1018568', label: 'Macacão', gender: '2' },
+    { id: '1018569', label: 'Suéter', gender: '2' },
+    { id: '1018570', label: 'Conjunto Social', gender: '2' },
+    { id: '1018562', label: 'Agasalho', gender: '2' },
+
+];
+
+export const OUTFIT_LABEL: Record<string, string> = Object.fromEntries(
+    OUTFIT_OPTIONS.map(o => [o.id, o.label])
+);
+export const OUTFIT_GENDER: Record<string, '1' | '2'> = Object.fromEntries(
+    OUTFIT_OPTIONS.map(o => [o.id, o.gender])
 );
 
-// ─── Unified option lists for the category selector ──────────────────────────
+/** Returns outfit IDs filtered for the given gender. Use this in the UI. */
+export function getOutfitsByGender(gender: '1' | '2'): string[] {
+    return OUTFIT_OPTIONS.filter(o => o.gender === gender).map(o => o.id);
+}
+
+/** First outfit ID available for a given gender — use as fallback when switching. */
+export function getDefaultOutfit(gender: '1' | '2'): string {
+    return OUTFIT_OPTIONS.find(o => o.gender === gender)?.id ?? '1018544';
+}
+
+// ─── Unified option lists ─────────────────────────────────────────────────────
+// AVATAR_OPTIONS.outfit holds all IDs; the UI should call getOutfitsByGender()
+// instead of reading this list directly for the outfit category.
 export const AVATAR_OPTIONS: Record<Category, string[]> = {
     skin_tone: [
         '16764057', '15838344', '16691590', '11170379', '13280865',
@@ -145,52 +164,20 @@ export const AVATAR_OPTIONS: Record<Category, string[]> = {
         '2039326', '2566954', '3613466', '4795690', '5587258',
         '7164990', '8672042', '10513945', '14133857', '16777164',
     ],
-
-    // Eyes — shape variants; labels in READABLE_LABELS
     eye: ['1610', '1616', '1622', '1613', '1619', '1625', '1611', '1617', '1623'],
-
-    pupil_tone: ['5977116', '8404014', '11174994', '3763125', '6064564', '2384950'],
-
-    // Brows — male set 1537–1544, female set 1573–1580
+    pupil_tone: ['5977116', '8404014', '11174994', '6064564'],
     brow: [
         '1537', '1538', '1539', '1540', '1541', '1542', '1543', '1544',
         '1573', '1574', '1575', '1576', '1577', '1578', '1579', '1580',
     ],
-
-    // Noses — male set 1435–1441+1646, female set 1490–1496+1647
     nose: [
         '1435', '1436', '1437', '1438', '1439', '1440', '1646', '1441',
         '1490', '1491', '1492', '1493', '1494', '1495', '1647', '1496',
     ],
-
-    // Mouths — what actually varies is LIP THICKNESS, not expression.
-    // 2337/38/39 = male lip thickness variants
-    // 2340/41/42 = female lip thickness variants
-    mouth: ['2337', '2338', '2339', '2340', '2341', '2342'],
-
-    // Beards — re-verified from screenshots:
-    //   -1   = nenhum
-    //   1343 = cavanhaque (chin goatee)
-    //   1344 = bigode fino (thin mustache only)
-    //   1345 = barba cheia (full beard)
-    //   1628 = âncora (chin + connected mustache)
-    //   1629 = barba média (medium beard)
-    //   1630 = ponto no queixo (soul patch — tiny dot)
-    //   2276 = barba curta (short stubble)
+    mouth: ['2337', '2338', '2339'],
     beard: ['-1', '1343', '1344', '1345', '1628', '1629', '1630'],
-
     body: BODY_OPTIONS.map(b => b.id),
-
-    // Outfits — base 8 verified + 16 additional (test in your app; remove any that return 404)
-    outfit: [
-        '1018544', '1018545', '1018548', '1018549',
-        '1018550', '1018552', '1018553', '1018554',
-        '1018555', '1018556', '1018557', '1018558',
-        '1018559', '1018560', '1018561', '1018562',
-        '1018563', '1018564', '1018565', '1018566',
-        '1018567', '1018568', '1018569', '1018570',
-    ],
-
+    outfit: OUTFIT_OPTIONS.map(o => o.id), // full list — filter via getOutfitsByGender() in the UI
     backgroundColor: [
         'dbeafe', 'dcfce7', 'fef9c3', 'fce7f3', 'ede9fe',
         'ffedd5', 'e0f2fe', 'fdf4ff', 'f8f9fa', 'ffffff', '1e293b',
@@ -200,12 +187,9 @@ export const AVATAR_OPTIONS: Record<Category, string[]> = {
 // ─── Readable labels ──────────────────────────────────────────────────────────
 export const READABLE_LABELS: Record<string, Record<string, string>> = {
     gender: { '1': 'Masculino', '2': 'Feminino' },
-
     body: BODY_LABEL,
-
     hair: HAIR_LABEL,
-
-    // Corrected beard labels based on visual observation
+    outfit: OUTFIT_LABEL,
     beard: {
         '-1': 'Nenhum',
         '1343': 'Barba cerrada',
@@ -216,92 +200,31 @@ export const READABLE_LABELS: Record<string, Record<string, string>> = {
         '1630': 'Ponto no Queixo',
         '2276': 'Barba Curta',
     },
-
-    // Corrected mouth labels — variation is lip thickness, not smile
     mouth: {
         '2337': 'Lábios Finos',
         '2338': 'Lábios Médios',
         '2339': 'Lábios Cheios',
-        '2340': 'Lábios Finos F',
-        '2341': 'Lábios Médios F',
-        '2342': 'Lábios Cheios F',
     },
-
-    outfit: {
-        '1018544': 'Casual Clássico',
-        '1018545': 'Social',
-        '1018548': 'Inverno',
-        '1018549': 'Básico',
-        '1018550': 'Esportivo',
-        '1018552': 'Despojado',
-        '1018553': 'Urbano',
-        '1018554': 'Streetwear',
-        '1018555': 'Jeans e Camiseta',
-        '1018556': 'Moletom',
-        '1018557': 'Camisa Xadrez',
-        '1018558': 'Regata',
-        '1018559': 'Terno',
-        '1018560': 'Colete',
-        '1018561': 'Polo',
-        '1018562': 'Agasalho',
-        '1018563': 'Vestido Casual',
-        '1018564': 'Blusa Floral',
-        '1018565': 'Conjunto Esportivo F',
-        '1018566': 'Camiseta e Saia',
-        '1018567': 'Jaqueta F',
-        '1018568': 'Macacão',
-        '1018569': 'Suéter F',
-        '1018570': 'Conjunto Social F',
-    },
-
     eye: {
-        '1610': 'Amendoado',
-        '1616': 'Redondo',
-        '1622': 'Levantado',
-        '1613': 'Inclinado',
-        '1619': 'Largo',
-        '1625': 'Profundo',
-        '1611': 'Pequeno',
-        '1617': 'Expressivo',
-        '1623': 'Suave',
+        '1610': 'Amendoado', '1616': 'Redondo', '1622': 'Levantado',
+        '1613': 'Inclinado', '1619': 'Largo', '1625': 'Profundo',
+        '1611': 'Pequeno', '1617': 'Expressivo', '1623': 'Suave',
     },
-
     brow: {
-        '1537': 'Reto',
-        '1538': 'Arqueado',
-        '1539': 'Espesso',
-        '1540': 'Natural',
-        '1541': 'Baixo',
-        '1542': 'Angulado',
-        '1543': 'Fino',
-        '1544': 'Curto',
-        '1573': 'Suave F',
-        '1574': 'Curvado F',
-        '1575': 'Definido F',
-        '1576': 'Levantado F',
-        '1577': 'Reto F',
-        '1578': 'Fino F',
-        '1579': 'Arqueado F',
-        '1580': 'Delicado F',
+        '1537': 'Reto', '1538': 'Arqueado', '1539': 'Espesso',
+        '1540': 'Natural', '1541': 'Baixo', '1542': 'Angulado',
+        '1543': 'Fino', '1544': 'Curto',
+        '1573': 'Suave F', '1574': 'Curvado F', '1575': 'Definido F',
+        '1576': 'Levantado F', '1577': 'Reto F', '1578': 'Fino F',
+        '1579': 'Arqueado F', '1580': 'Delicado F',
     },
-
     nose: {
-        '1435': 'Padrão',
-        '1436': 'Largo',
-        '1437': 'Pontudo',
-        '1438': 'Arrebitado',
-        '1439': 'Romano',
-        '1440': 'Pequeno',
-        '1646': 'Achatado',
-        '1441': 'Redondo',
-        '1490': 'Natural F',
-        '1491': 'Delicado F',
-        '1492': 'Pontudo F',
-        '1493': 'Arrebitado F',
-        '1494': 'Fino F',
-        '1495': 'Pequeno F',
-        '1647': 'Achatado F',
-        '1496': 'Suave F',
+        '1435': 'Padrão', '1436': 'Largo', '1437': 'Pontudo',
+        '1438': 'Arrebitado', '1439': 'Romano', '1440': 'Pequeno',
+        '1646': 'Achatado', '1441': 'Redondo',
+        '1490': 'Natural F', '1491': 'Delicado F', '1492': 'Pontudo F',
+        '1493': 'Arrebitado F', '1494': 'Fino F', '1495': 'Pequeno F',
+        '1647': 'Achatado F', '1496': 'Suave F',
     },
 };
 
@@ -317,7 +240,6 @@ export const COLOR_LABELS: Record<string, { hex: string; name: string }> = {
     '9655597': { hex: '#93554D', name: 'Muito Escuro' },
     '5451546': { hex: '#533626', name: 'Ebôneo' },
     '4732712': { hex: '#483728', name: 'Negro' },
-
     '2039326': { hex: '#1F1E1E', name: 'Preto' },
     '2566954': { hex: '#272B2A', name: 'Ébano' },
     '3613466': { hex: '#37231A', name: 'Castanho Escuro' },
@@ -328,15 +250,10 @@ export const COLOR_LABELS: Record<string, { hex: string; name: string }> = {
     '10513945': { hex: '#A07860', name: 'Ruivo' },
     '14133857': { hex: '#D7A878', name: 'Loiro' },
     '16777164': { hex: '#FFFFEC', name: 'Platinado' },
-
     '5977116': { hex: '#5B3923', name: 'Castanho' },
-    '8404014': { hex: '#80684D', name: 'Mel' },
-    '11174994': { hex: '#779899', name: 'Azul Acinzentado' },
-    '3763125': { hex: '#395F75', name: 'Azul' },
-    '6064564': { hex: '#5C8A3C', name: 'Verde' },
-    '2384950': { hex: '#243349', name: 'Azul Escuro' },
-
-    'dbeafe': { hex: '#DBEAFE', name: 'Azul Claro' },
+    '8404014': { hex: '#80684D', name: 'Castanho Claro' },
+    '11174994': { hex: '#6f8f00', name: 'Verde' },
+    '6064564': { hex: '#7ba0f3', name: 'Azul' },
     'dcfce7': { hex: '#DCFCE7', name: 'Verde Menta' },
     'fef9c3': { hex: '#FEF9C3', name: 'Amarelo Pastel' },
     'fce7f3': { hex: '#FCE7F3', name: 'Rosa' },
@@ -350,14 +267,12 @@ export const COLOR_LABELS: Record<string, { hex: string; name: string }> = {
 };
 
 // ─── URL builder ──────────────────────────────────────────────────────────────
-// Gender is resolved from the selected hair (priority) or body, never stored separately.
 export function buildBitmojiUrl(config: Partial<AvatarConfig>): string {
     const baseUrl = 'https://preview.bitmoji.com/avatar-builder-v3/preview/body';
     const params = new URLSearchParams();
 
     const hairGender = config.hair ? HAIR_GENDER[config.hair] : undefined;
-    const bodyGender = config.body ? BODY_GENDER[config.body] : undefined;
-    const gender = hairGender ?? bodyGender ?? config.gender ?? '1';
+    const gender = hairGender ?? config.gender ?? '1';
 
     params.set('scale', '1');
     params.set('rotation', '0');
@@ -373,12 +288,14 @@ export function buildBitmojiUrl(config: Partial<AvatarConfig>): string {
     traits.forEach(trait => {
         const val = (config as any)[trait];
         if (val !== undefined && val !== null && val !== '') {
+            if (val === '-1') return; // Skip empty traits like beard="-1"
+            if (gender === '2' && trait === 'beard') return; // Females cannot have beard params
             params.set(trait, val);
         }
     });
 
-    params.set('outfit', config.outfit || '1018544');
-
+    const defaultOutfit = gender === '2' ? '1018563' : '1018544';
+    params.set('outfit', config.outfit || defaultOutfit);
     return `${baseUrl}?${params.toString()}`;
 }
 
