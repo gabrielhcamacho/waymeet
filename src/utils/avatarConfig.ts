@@ -99,13 +99,25 @@ export const BODY_LABEL: Record<string, string> = Object.fromEntries(
 );
 
 // ─── Outfits ──────────────────────────────────────────────────────────────────
-// Each outfit is tagged with its gender. The UI filters this list dynamically
-// based on avatarConfig.gender (which is driven by the selected hair).
+// ⚠️  ONLY IDs that are VERIFIED to render correctly in the Bitmoji style=5 API.
+//
+// The API uses the `outfit` param as a complete preset ID.
+// IDs outside this verified set silently fall back to the default outfit,
+// which is why "Camisa Xadrez" was rendering a football shirt and female
+// outfits were always showing the grey tracksuit — those IDs don't exist.
+//
+// Verified male IDs:   1018544, 1018545, 1018548, 1018549, 1018550, 1018552, 1018553, 1018554
+// Verified female IDs: same IDs but rendered with gender=2 produce different clothing.
+//
+// Strategy: use the same 8 core IDs for both genders — the API renders
+// gender-appropriate clothing automatically based on the `gender` param.
+// We split them into two logical groups with appropriate labels for each gender.
+
 export type OutfitEntry = { id: string; label: string; gender: '1' | '2' };
 
 export const OUTFIT_OPTIONS: OutfitEntry[] = [
-    // ── Male ──────────────────────────────────────────────────────────────────
-    { id: '1018544', label: 'Casual Clássico', gender: '1' },
+    // ── Male labels ───────────────────────────────────────────────────────────
+    { id: '1018544', label: 'Casual', gender: '1' },
     { id: '1018545', label: 'Social', gender: '1' },
     { id: '1018548', label: 'Inverno', gender: '1' },
     { id: '1018549', label: 'Básico', gender: '1' },
@@ -113,47 +125,51 @@ export const OUTFIT_OPTIONS: OutfitEntry[] = [
     { id: '1018552', label: 'Despojado', gender: '1' },
     { id: '1018553', label: 'Urbano', gender: '1' },
     { id: '1018554', label: 'Streetwear', gender: '1' },
-    { id: '1018555', label: 'Jeans e Camiseta', gender: '1' },
-    { id: '1018556', label: 'Moletom', gender: '1' },
-    { id: '1018557', label: 'Camisa Xadrez', gender: '1' },
-    { id: '1018558', label: 'Regata', gender: '1' },
-    { id: '1018559', label: 'Terno', gender: '1' },
-    { id: '1018560', label: 'Colete', gender: '1' },
-    { id: '1018561', label: 'Polo', gender: '1' },
-    { id: '1018562', label: 'Agasalho', gender: '1' },
-    // ── Female ────────────────────────────────────────────────────────────────
-    { id: '1018563', label: 'Vestido Casual', gender: '2' },
-    { id: '1018564', label: 'Blusa Floral', gender: '2' },
-    { id: '1018565', label: 'Conjunto Esportivo', gender: '2' },
-    { id: '1018566', label: 'Camiseta e Saia', gender: '2' },
-    { id: '1018567', label: 'Jaqueta', gender: '2' },
-    { id: '1018568', label: 'Macacão', gender: '2' },
-    { id: '1018569', label: 'Suéter', gender: '2' },
-    { id: '1018570', label: 'Conjunto Social', gender: '2' },
-    { id: '1018562', label: 'Agasalho', gender: '2' },
-
+    // ── Female labels (same IDs, different rendering via gender=2) ────────────
+    { id: '1018544', label: 'Casual', gender: '2' },
+    { id: '1018545', label: 'Elegante', gender: '2' },
+    { id: '1018548', label: 'Inverno', gender: '2' },
+    { id: '1018549', label: 'Básico', gender: '2' },
+    { id: '1018550', label: 'Esportivo', gender: '2' },
+    { id: '1018552', label: 'Despojado', gender: '2' },
+    { id: '1018553', label: 'Urbano', gender: '2' },
+    { id: '1018554', label: 'Streetwear', gender: '2' },
 ];
 
+export const OUTFIT_LABEL_BY_GENDER: Record<'1' | '2', Record<string, string>> = {
+    '1': Object.fromEntries(OUTFIT_OPTIONS.filter(o => o.gender === '1').map(o => [o.id, o.label])),
+    '2': Object.fromEntries(OUTFIT_OPTIONS.filter(o => o.gender === '2').map(o => [o.id, o.label])),
+};
+
+// Flat label map (used as fallback — prefers male label)
 export const OUTFIT_LABEL: Record<string, string> = Object.fromEntries(
-    OUTFIT_OPTIONS.map(o => [o.id, o.label])
+    OUTFIT_OPTIONS.filter(o => o.gender === '1').map(o => [o.id, o.label])
 );
+
 export const OUTFIT_GENDER: Record<string, '1' | '2'> = Object.fromEntries(
     OUTFIT_OPTIONS.map(o => [o.id, o.gender])
 );
 
-/** Returns outfit IDs filtered for the given gender. Use this in the UI. */
+/** Returns deduplicated outfit IDs for the given gender (all 8 verified IDs). */
 export function getOutfitsByGender(gender: '1' | '2'): string[] {
-    return OUTFIT_OPTIONS.filter(o => o.gender === gender).map(o => o.id);
+    const seen = new Set<string>();
+    return OUTFIT_OPTIONS
+        .filter(o => o.gender === gender)
+        .map(o => o.id)
+        .filter(id => { const ok = !seen.has(id); seen.add(id); return ok; });
 }
 
-/** First outfit ID available for a given gender — use as fallback when switching. */
+/** Returns the gender-aware label for an outfit ID. */
+export function getOutfitLabel(id: string, gender: '1' | '2'): string {
+    return OUTFIT_LABEL_BY_GENDER[gender]?.[id] ?? OUTFIT_LABEL[id] ?? id;
+}
+
+/** Default outfit for a given gender. */
 export function getDefaultOutfit(gender: '1' | '2'): string {
-    return OUTFIT_OPTIONS.find(o => o.gender === gender)?.id ?? '1018544';
+    return '1018544'; // Casual — works for both genders
 }
 
 // ─── Unified option lists ─────────────────────────────────────────────────────
-// AVATAR_OPTIONS.outfit holds all IDs; the UI should call getOutfitsByGender()
-// instead of reading this list directly for the outfit category.
 export const AVATAR_OPTIONS: Record<Category, string[]> = {
     skin_tone: [
         '16764057', '15838344', '16691590', '11170379', '13280865',
@@ -177,7 +193,7 @@ export const AVATAR_OPTIONS: Record<Category, string[]> = {
     mouth: ['2337', '2338', '2339'],
     beard: ['-1', '1343', '1344', '1345', '1628', '1629', '1630'],
     body: BODY_OPTIONS.map(b => b.id),
-    outfit: OUTFIT_OPTIONS.map(o => o.id), // full list — filter via getOutfitsByGender() in the UI
+    outfit: ['1018544', '1018545', '1018548', '1018549', '1018550', '1018552', '1018553', '1018554'],
     backgroundColor: [
         'dbeafe', 'dcfce7', 'fef9c3', 'fce7f3', 'ede9fe',
         'ffedd5', 'e0f2fe', 'fdf4ff', 'f8f9fa', 'ffffff', '1e293b',
@@ -189,7 +205,7 @@ export const READABLE_LABELS: Record<string, Record<string, string>> = {
     gender: { '1': 'Masculino', '2': 'Feminino' },
     body: BODY_LABEL,
     hair: HAIR_LABEL,
-    outfit: OUTFIT_LABEL,
+    outfit: OUTFIT_LABEL, // used as fallback; prefer getOutfitLabel(id, gender) in UI
     beard: {
         '-1': 'Nenhum',
         '1343': 'Barba cerrada',
@@ -254,6 +270,7 @@ export const COLOR_LABELS: Record<string, { hex: string; name: string }> = {
     '8404014': { hex: '#80684D', name: 'Castanho Claro' },
     '11174994': { hex: '#6f8f00', name: 'Verde' },
     '6064564': { hex: '#7ba0f3', name: 'Azul' },
+    'dbeafe': { hex: '#DBEAFE', name: 'Azul Claro' },
     'dcfce7': { hex: '#DCFCE7', name: 'Verde Menta' },
     'fef9c3': { hex: '#FEF9C3', name: 'Amarelo Pastel' },
     'fce7f3': { hex: '#FCE7F3', name: 'Rosa' },
@@ -287,15 +304,17 @@ export function buildBitmojiUrl(config: Partial<AvatarConfig>): string {
 
     traits.forEach(trait => {
         const val = (config as any)[trait];
-        if (val !== undefined && val !== null && val !== '') {
-            if (val === '-1') return; // Skip empty traits like beard="-1"
-            if (gender === '2' && trait === 'beard') return; // Females cannot have beard params
-            params.set(trait, val);
-        }
+        if (val === undefined || val === null || val === '') return;
+        if (val === '-1') return; // skip "none" beard
+        if (gender === '2' && trait === 'beard') return; // no beard for female
+        params.set(trait, val);
     });
 
-    const defaultOutfit = gender === '2' ? '1018563' : '1018544';
-    params.set('outfit', config.outfit || defaultOutfit);
+    // Always use a verified outfit ID; fall back to 1018544 if something invalid slips through
+    const VERIFIED = new Set(['1018544', '1018545', '1018548', '1018549', '1018550', '1018552', '1018553', '1018554']);
+    const outfit = config.outfit && VERIFIED.has(config.outfit) ? config.outfit : '1018544';
+    params.set('outfit', outfit);
+
     return `${baseUrl}?${params.toString()}`;
 }
 

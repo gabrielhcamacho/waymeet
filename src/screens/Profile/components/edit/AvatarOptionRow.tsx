@@ -5,6 +5,7 @@ import {
     COLOR_CATEGORIES,
     COLOR_LABELS,
     READABLE_LABELS,
+    getOutfitLabel,
 } from "@/src/utils/avatarConfig";
 
 interface AvatarOptionRowProps {
@@ -12,6 +13,8 @@ interface AvatarOptionRowProps {
     options: readonly string[];
     selectedValue: string | undefined;
     onSelect: (category: string, value: string) => void;
+    /** Current avatar gender — needed to show correct outfit label */
+    gender?: '1' | '2';
 }
 
 export const AvatarOptionRow: React.FC<AvatarOptionRowProps> = ({
@@ -19,6 +22,7 @@ export const AvatarOptionRow: React.FC<AvatarOptionRowProps> = ({
     options,
     selectedValue,
     onSelect,
+    gender = '1',
 }) => {
     const isColor = COLOR_CATEGORIES.has(category);
 
@@ -58,8 +62,11 @@ export const AvatarOptionRow: React.FC<AvatarOptionRowProps> = ({
         <View className="flex-row flex-wrap px-4 py-3 gap-2">
             {options.map((opt) => {
                 const isSelected = selectedValue === opt;
-                // All labels must come from READABLE_LABELS — no "Olho 1", "Barba 2", etc.
-                const label = READABLE_LABELS[category]?.[opt] ?? opt;
+
+                // For outfit, use gender-aware label
+                const label = category === 'outfit'
+                    ? getOutfitLabel(opt, gender)
+                    : (READABLE_LABELS[category]?.[opt] ?? opt);
 
                 return (
                     <TouchableOpacity
