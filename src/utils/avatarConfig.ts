@@ -188,7 +188,7 @@ export const AVATAR_OPTIONS: Record<Category, string[]> = {
     ],
     nose: [
         '1435', '1436', '1437', '1438', '1439', '1440', '1646', '1441',
-        '1490', '1491', '1492', '1493', '1494', '1495', '1647', '1496',
+        '1491', '1492', '1494', '1495', '1496',
     ],
     mouth: ['2337', '2338', '2339'],
     beard: ['-1', '1343', '1344', '1345', '1628', '1629', '1630'],
@@ -238,9 +238,6 @@ export const READABLE_LABELS: Record<string, Record<string, string>> = {
         '1435': 'Padrão', '1436': 'Largo', '1437': 'Pontudo',
         '1438': 'Arrebitado', '1439': 'Romano', '1440': 'Pequeno',
         '1646': 'Achatado', '1441': 'Redondo',
-        '1490': 'Natural F', '1491': 'Delicado F', '1492': 'Pontudo F',
-        '1493': 'Arrebitado F', '1494': 'Fino F', '1495': 'Pequeno F',
-        '1647': 'Achatado F', '1496': 'Suave F',
     },
 };
 
