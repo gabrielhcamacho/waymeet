@@ -4,18 +4,8 @@ import { Text } from '@/src/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useIntentionStore } from '../store/useIntentionStore';
-import { SocialIntention } from '../types';
-
-const INTENTION_OPTIONS: { emoji: string; label: string; id: string }[] = [
-    { id: '1', emoji: '☕', label: 'Café agora' },
-    { id: '2', emoji: '🍻', label: 'Drinks' },
-    { id: '3', emoji: '⚽', label: 'Esporte' },
-    { id: '4', emoji: '🚶', label: 'Explorar' },
-    { id: '5', emoji: '🎵', label: 'Música ao vivo' },
-    { id: '6', emoji: '🧘', label: 'Yoga / Bem-estar' },
-    { id: '7', emoji: '💻', label: 'Trabalhar em café' },
-    { id: '8', emoji: '🫂', label: 'Não quero ficar sozinho' },
-];
+import { SocialIntention, Category } from '../types';
+import { useCategoriesStore } from '../store/useCategoriesStore';
 
 interface IntentionSelectorSheetProps {
     visible: boolean;
@@ -28,12 +18,13 @@ export const IntentionSelectorSheet: React.FC<IntentionSelectorSheetProps> = ({
 }) => {
     const insets = useSafeAreaInsets();
     const { activeIntention, setIntention, clearIntention } = useIntentionStore();
+    const { categories } = useCategoriesStore();
 
-    const handleSelect = (option: typeof INTENTION_OPTIONS[number]) => {
+    const handleSelect = (category: Category) => {
         const intention: SocialIntention = {
-            id: option.id,
-            emoji: option.emoji,
-            label: option.label.toLowerCase(),
+            id: category.id,
+            emoji: category.icon,
+            label: category.name.toLowerCase(),
             activeCount: Math.floor(Math.random() * 15) + 1,
         };
         setIntention(intention);
@@ -78,25 +69,27 @@ export const IntentionSelectorSheet: React.FC<IntentionSelectorSheetProps> = ({
 
                     {/* Options Grid */}
                     <View className="px-6 flex-row flex-wrap gap-3 mb-4">
-                        {INTENTION_OPTIONS.map((option) => {
-                            const isActive = activeIntention?.id === option.id;
+                        {categories.map((category) => {
+                            const isActive = activeIntention?.id === category.id;
                             return (
                                 <TouchableOpacity
-                                    key={option.id}
-                                    onPress={() => handleSelect(option)}
+                                    key={category.id}
+                                    onPress={() => handleSelect(category)}
                                     activeOpacity={0.7}
-                                    className={`w-[47%] flex-row items-center px-4 py-4 rounded-2xl border-2 gap-3 ${isActive
-                                            ? 'bg-orange-50 border-orange-500'
-                                            : 'bg-gray-50 border-transparent'
-                                        }`}
+                                    className={`w-[47%] flex-row items-center px-4 py-4 rounded-2xl border-2 gap-3 ${
+                                        isActive ? 'bg-orange-50 border-orange-500' : 'bg-gray-50 border-transparent'
+                                    }`}
                                 >
-                                    <Text className="text-2xl">{option.emoji}</Text>
+                                    <Ionicons
+                                        name={category.icon as any}
+                                        size={22}
+                                        color={isActive ? category.color : '#6B7280'}
+                                    />
                                     <Text
-                                        className={`text-[13px] font-semibold flex-1 ${isActive ? 'text-orange-600' : 'text-gray-700'
-                                            }`}
+                                        className={`text-[13px] font-semibold flex-1 ${isActive ? 'text-orange-600' : 'text-gray-700'}`}
                                         numberOfLines={1}
                                     >
-                                        {option.label}
+                                        {category.name}
                                     </Text>
                                     {isActive && (
                                         <Ionicons name="checkmark-circle" size={18} color="#FF7A00" />

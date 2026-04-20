@@ -16,8 +16,8 @@ import { useEventsStore } from '../../store/useEventsStore';
 
 export const ChatScreen: React.FC<{ route: any; navigation: any }> = ({ route, navigation }) => {
     const insets = useSafeAreaInsets();
-    const { eventId, eventTitle } = route.params;
-    const { messages, fetchMessages, sendMessage } = useChatStore();
+    const { eventId, eventTitle, chatType = 'event' } = route.params;
+    const { messages, fetchMessages, sendMessage, subscribeToRoom } = useChatStore();
     const { user } = useUserStore();
     const [text, setText] = useState('');
     const flatListRef = useRef<FlatList>(null);
@@ -33,11 +33,15 @@ export const ChatScreen: React.FC<{ route: any; navigation: any }> = ({ route, n
         return attendeeIds.includes(u.id) && ago < 10 * 60 * 1000;
     }).length;
 
-    useEffect(() => { fetchMessages(eventId); }, [eventId]);
+    useEffect(() => {
+        fetchMessages(eventId, chatType);
+        const unsubscribe = subscribeToRoom(eventId, chatType);
+        return unsubscribe;
+    }, [eventId]);
 
     const handleSend = () => {
         if (!text.trim() || !user) return;
-        sendMessage(eventId, user.id, text.trim());
+        sendMessage(eventId, user.id, text.trim(), chatType);
         setText('');
         setTimeout(() => flatListRef.current?.scrollToEnd({ animated: true }), 100);
     };

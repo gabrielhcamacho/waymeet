@@ -29,7 +29,7 @@ export const CommunityCard: React.FC<CommunityCardProps> = ({ community, onPress
                 imageStyle={{ borderTopLeftRadius: 16, borderTopRightRadius: 16 }}
             >
                 <View className="bg-black/30 px-3 py-1.5 self-start ml-2.5 mb-2.5 rounded-full">
-                    <Text className="text-white text-[11px] font-semibold">{community.emoji} {community.name}</Text>
+                    <Text className="text-white text-[11px] font-semibold">{community.name}</Text>
                 </View>
             </ImageBackground>
 

@@ -67,7 +67,7 @@ export const EventDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
     const btn = getButtonConfig();
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, { paddingTop: insets.top }]}>
             <ScrollView showsVerticalScrollIndicator={false}>
                 {/* Hero Image */}
                 <ImageBackground
@@ -75,7 +75,7 @@ export const EventDetailScreen: React.FC<{ route: any; navigation: any }> = ({ r
                     style={styles.heroImage}
                     imageStyle={{ borderBottomLeftRadius: 24, borderBottomRightRadius: 24 }}
                 >
-                    <View style={[styles.heroOverlay, { paddingTop: insets.top }]}>
+                    <View style={styles.heroOverlay}>
                         <TouchableOpacity
                             onPress={() => navigation.goBack()}
                             style={styles.backButton}

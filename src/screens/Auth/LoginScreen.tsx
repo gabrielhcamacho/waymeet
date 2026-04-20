@@ -41,12 +41,13 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     };
 
     return (
+        <View style={[styles.container, { paddingTop: insets.top }]}>
         <KeyboardAvoidingView
-            style={styles.container}
+            style={{ flex: 1 }}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         >
             <ScrollView
-                contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
+                contentContainerStyle={[styles.scrollContent, { paddingTop: 20 }]}
                 keyboardShouldPersistTaps="handled"
             >
                 {/* Back button */}
@@ -176,6 +177,7 @@ export const LoginScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 </View>
             </ScrollView>
         </KeyboardAvoidingView>
+        </View>
     );
 };
 

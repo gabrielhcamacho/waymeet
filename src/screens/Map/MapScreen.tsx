@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo, useCallback } from 'react';
-import { View, StyleSheet, TouchableOpacity, Dimensions, Platform, Linking, ActivityIndicator, Animated, Image, ScrollView, PanResponder } from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Dimensions, Platform, Linking, ActivityIndicator, Animated, Image, ScrollView, PanResponder, ImageBackground } from 'react-native';
 import MapLibreGL from '@maplibre/maplibre-react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors, FontSize, Shadows, BorderRadius } from '../../config/theme';
@@ -23,18 +23,29 @@ const { width, height } = Dimensions.get('window');
 MapLibreGL.setAccessToken(null);
 
 // -------------------------------------------------------------
+// Helper: Category Icon name for Ionicons
+// -------------------------------------------------------------
+const getCategoryIcon = (category: string): string => {
+    const cat = (category || '').toLowerCase();
+    if (cat.includes('sport') || cat.includes('esporte') || cat.includes('futebol')) return 'football-outline';
+    if (cat.includes('adventure') || cat.includes('aventura')) return 'trail-sign-outline';
+    if (cat.includes('cultural') || cat.includes('cultura')) return 'color-palette-outline';
+    if (cat.includes('gastro') || cat.includes('food') || cat.includes('comida')) return 'restaurant-outline';
+    if (cat.includes('music') || cat.includes('música') || cat.includes('musica')) return 'musical-notes-outline';
+    if (cat.includes('tech')) return 'laptop-outline';
+    if (cat.includes('social') || cat.includes('friends') || cat.includes('amigos')) return 'people-outline';
+    if (cat.includes('café') || cat.includes('cafe') || cat.includes('coffee')) return 'cafe-outline';
+    if (cat.includes('nature') || cat.includes('natureza') || cat.includes('eco')) return 'leaf-outline';
+    if (cat.includes('art') || cat.includes('arte')) return 'color-palette-outline';
+    if (cat.includes('negócio') || cat.includes('business')) return 'briefcase-outline';
+    return 'calendar-outline';
+};
+
+// -------------------------------------------------------------
 // Helper: Event Pin (Teardrop) — FULLY STATIC, no isSelected
 // -------------------------------------------------------------
 const EventPin = React.memo(({ event, zoomAnim }: { event: WayMeetEvent, zoomAnim: Animated.Value }) => {
     const isAgora = event.title.toLowerCase().includes('agora') || event.category === 'Sports';
-
-    const getEmoji = (cat: string) => {
-        if (cat === 'Sports') return '⚽';
-        if (cat === 'Adventures') return '🏔️';
-        if (cat === 'Cultural') return '🎭';
-        if (cat === 'Gastronomic') return '🍽️';
-        return '📍';
-    };
 
     const scale = zoomAnim ? zoomAnim.interpolate({
         inputRange: [9, 13, 16],
@@ -60,7 +71,9 @@ const EventPin = React.memo(({ event, zoomAnim }: { event: WayMeetEvent, zoomAni
                 shadowOpacity: 0.3, shadowRadius: 4, elevation: 5,
                 borderColor: '#ffffff', borderWidth: 1
             }}>
-                <Text style={{ transform: [{ rotate: '45deg' }], fontSize: 16 }}>{getEmoji(event.category)}</Text>
+                <View style={{ transform: [{ rotate: '45deg' }] }}>
+                    <Ionicons name={getCategoryIcon(event.category) as any} size={16} color="white" />
+                </View>
             </View>
         </Animated.View>
     );
@@ -72,19 +85,19 @@ const EventPin = React.memo(({ event, zoomAnim }: { event: WayMeetEvent, zoomAni
 // Helper: Place Pin (Badge Horizontal) — FULLY STATIC, no isSelected
 // -------------------------------------------------------------
 const PlacePin = React.memo(({ place, distance, zoomAnim }: { place: Place, distance: number, zoomAnim: Animated.Value }) => {
-    const getPlaceEmoji = (category: string) => {
+    const getPlaceIconName = (category: string): string => {
         const cat = (category || '').toLowerCase();
-        if (cat.includes('restaurante') || cat.includes('comida') || cat.includes('food')) return '🍽️';
-        if (cat.includes('bar') || cat.includes('pub') || cat.includes('bebida')) return '🍺';
-        if (cat.includes('parque') || cat.includes('praça')) return '🌳';
-        if (cat.includes('museu') || cat.includes('arte')) return '🏛️';
-        if (cat.includes('mirante') || cat.includes('vista')) return '🏔️';
-        if (cat.includes('café') || cat.includes('coffee')) return '☕';
-        if (cat.includes('clube') || cat.includes('festa') || cat.includes('balada')) return '🎉';
-        return '📍';
+        if (cat.includes('restaurante') || cat.includes('comida') || cat.includes('food')) return 'restaurant-outline';
+        if (cat.includes('bar') || cat.includes('pub') || cat.includes('bebida')) return 'beer-outline';
+        if (cat.includes('parque') || cat.includes('praça')) return 'leaf-outline';
+        if (cat.includes('museu') || cat.includes('arte')) return 'business-outline';
+        if (cat.includes('mirante') || cat.includes('vista')) return 'image-outline';
+        if (cat.includes('café') || cat.includes('coffee')) return 'cafe-outline';
+        if (cat.includes('clube') || cat.includes('festa') || cat.includes('balada')) return 'musical-notes-outline';
+        return 'location-outline';
     };
 
-    const emoji = place.categoryIcons?.[0] || getPlaceEmoji(place.category);
+    const iconName = getPlaceIconName(place.category);
     const categoryName = place.category || 'Local';
     const distText = distance < 1 ? `${Math.round(distance * 1000)}m` : `${distance.toFixed(1)}km`;
 
@@ -110,7 +123,7 @@ const PlacePin = React.memo(({ place, distance, zoomAnim }: { place: Place, dist
                 elevation: 3,
             }}>
                 <View style={{ marginRight: 5 }}>
-                    <Text style={{ fontSize: 14 }}>{emoji}</Text>
+                    <Ionicons name={iconName as any} size={14} color="#FF7A00" />
                 </View>
                 <View style={{ flexDirection: 'column' }}>
                     <Text style={{ fontSize: 11, fontWeight: '800', color: '#1f2937' }} numberOfLines={1}>
@@ -251,7 +264,7 @@ function matchPlaceCategory(tipo: string, category: string): boolean {
 // -------------------------------------------------------------
 export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
-    const { events } = useEventsStore();
+    const { events, fetchEvents } = useEventsStore();
     const cameraRef = useRef<React.ElementRef<typeof MapLibreGL.Camera>>(null);
     const mapRef = useRef<React.ElementRef<typeof MapLibreGL.MapView>>(null);
     const [activeLayers, setActiveLayers] = useState<MapLayer[]>(['eventos', 'pessoas']);
@@ -260,6 +273,10 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
 
     const [userLocation, setUserLocation] = useState({ latitude: -26.9926, longitude: -48.6340 });
     const [hasLocationPermission, setHasLocationPermission] = useState<boolean | null>(null);
+    const [loadedRegions, setLoadedRegions] = useState<Array<{ minLat: number; maxLat: number; minLng: number; maxLng: number }>>([]);
+    const [showLoadRegionBtn, setShowLoadRegionBtn] = useState(false);
+    const [isLoadingRegion, setIsLoadingRegion] = useState(false);
+    const [currentRegion, setCurrentRegion] = useState<{ latitude: number; longitude: number; latitudeDelta: number; longitudeDelta: number } | null>(null);
 
     // Global Filters
     const mapFilters = useMapFilterStore();
@@ -401,6 +418,33 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
         setIsMinimized(false);
     };
 
+    const isRegionLoaded = (region: { latitude: number; longitude: number }): boolean => {
+        return loadedRegions.some(r =>
+            region.latitude >= r.minLat &&
+            region.latitude <= r.maxLat &&
+            region.longitude >= r.minLng &&
+            region.longitude <= r.maxLng
+        );
+    };
+
+    const handleLoadRegion = useCallback(async () => {
+        if (!currentRegion || isLoadingRegion) return;
+        setIsLoadingRegion(true);
+        setShowLoadRegionBtn(false);
+        try {
+            await fetchEvents();
+            const delta = currentRegion.latitudeDelta ?? 0.05;
+            setLoadedRegions(prev => [...prev, {
+                minLat: currentRegion.latitude - delta,
+                maxLat: currentRegion.latitude + delta,
+                minLng: currentRegion.longitude - delta,
+                maxLng: currentRegion.longitude + delta,
+            }]);
+        } finally {
+            setIsLoadingRegion(false);
+        }
+    }, [currentRegion, isLoadingRegion, fetchEvents]);
+
     useEffect(() => {
         (async () => {
             const permission = await locationService.requestPermission();
@@ -409,6 +453,9 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 const loc = await locationService.getCurrentLocation();
                 if (loc) setUserLocation({ latitude: loc.latitude, longitude: loc.longitude });
             }
+            await fetchEvents();
+            // Mark the initial region as loaded
+            setLoadedRegions([{ minLat: -23.5, maxLat: -23.1, minLng: -51.4, maxLng: -51.0 }]);
         })();
         setActiveUsers(MOCK_PRESENCE_USERS);
     }, []);
@@ -538,12 +585,17 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                     const bounds = e.properties.visibleBounds;
                     if (coords && bounds) {
                         const [ne, sw] = bounds;
+                        const latDelta = Math.abs(ne[1] - sw[1]);
+                        const lngDelta = Math.abs(ne[0] - sw[0]);
                         setRegion({
                             latitude: coords[1],
                             longitude: coords[0],
-                            latitudeDelta: Math.abs(ne[1] - sw[1]),
-                            longitudeDelta: Math.abs(ne[0] - sw[0]),
+                            latitudeDelta: latDelta,
+                            longitudeDelta: lngDelta,
                         });
+                        const newRegion = { latitude: coords[1], longitude: coords[0], latitudeDelta: latDelta, longitudeDelta: lngDelta };
+                        setCurrentRegion(newRegion);
+                        setShowLoadRegionBtn(!isRegionLoaded({ latitude: coords[1], longitude: coords[0] }));
                     }
                 }}
                 onPress={() => {
@@ -654,6 +706,46 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 />
             </View>
 
+            {/* Load Region Button */}
+            {(showLoadRegionBtn || isLoadingRegion) && (
+                <View style={{
+                    position: 'absolute',
+                    top: insets.top + 106,
+                    alignSelf: 'center',
+                    left: 0, right: 0,
+                    alignItems: 'center',
+                    zIndex: 20,
+                }}>
+                    <TouchableOpacity
+                        onPress={handleLoadRegion}
+                        disabled={isLoadingRegion}
+                        style={{
+                            flexDirection: 'row',
+                            alignItems: 'center',
+                            backgroundColor: '#1F2937',
+                            paddingVertical: 8,
+                            paddingHorizontal: 16,
+                            borderRadius: 20,
+                            gap: 6,
+                            shadowColor: '#000',
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.2,
+                            shadowRadius: 6,
+                            elevation: 6,
+                        }}
+                    >
+                        {isLoadingRegion ? (
+                            <ActivityIndicator size="small" color="white" />
+                        ) : (
+                            <Ionicons name="refresh-outline" size={16} color="white" />
+                        )}
+                        <Text style={{ color: 'white', fontSize: 13, fontWeight: '600' }}>
+                            {isLoadingRegion ? 'Carregando...' : 'Carregar dados aqui'}
+                        </Text>
+                    </TouchableOpacity>
+                </View>
+            )}
+
             {/* Float Action Button & Locate Button (adjust translation when panel is active) */}
             <Animated.View style={[
                 styles.fabLocationContainer,
@@ -712,14 +804,21 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 12 }}>
                     {filteredEvents.slice(0, 5).map(e => (
                         <TouchableOpacity key={e.id} style={styles.miniCard} onPress={() => handleSelect('event', e, e.latitude, e.longitude)}>
-                            <View style={[styles.miniCardHeader, { backgroundColor: e.title.includes('Agora') ? '#FFEDD5' : '#F3F4F6' }]}>
-                                <Text style={{ fontSize: 20 }}>⚽</Text>
+                            <ImageBackground
+                                source={{ uri: e.imageUrl }}
+                                style={[styles.miniCardHeader, { overflow: 'hidden' }]}
+                                imageStyle={{ borderTopLeftRadius: 12, borderTopRightRadius: 12 }}
+                            >
+                                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '100%', backgroundColor: 'rgba(0,0,0,0.25)' }} />
+                                <View style={{ width: 32, height: 32, backgroundColor: 'rgba(255,255,255,0.9)', borderRadius: 8, justifyContent: 'center', alignItems: 'center' }}>
+                                    <Ionicons name={getCategoryIcon(e.category) as any} size={18} color="#FF5028" />
+                                </View>
                                 {e.title.includes('Agora') ? (
                                     <View style={styles.badgeAgora}><Text style={styles.badgeAgoraTxt}>AGORA</Text></View>
                                 ) : (
-                                    <View style={styles.badgeFuture}><Text style={styles.badgeFutureTxt}>{e.time}</Text></View>
+                                    <View style={styles.badgeFuture}><Text style={styles.badgeFutureTxt}>{e.time.substring(0, 5)}</Text></View>
                                 )}
-                            </View>
+                            </ImageBackground>
                             <Text style={styles.miniCardTitle} numberOfLines={1}>{e.title}</Text>
                             <Text style={styles.miniCardSub}>400m · {e.attendees.length} pessoas</Text>
                         </TouchableOpacity>
@@ -757,7 +856,7 @@ export const MapScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                                 <View style={{ flex: 1, paddingRight: 12 }}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
                                         <View style={{ width: 32, height: 32, backgroundColor: '#FFF0ED', borderRadius: 8, justifyContent: 'center', alignItems: 'center', marginRight: 10 }}>
-                                            <Text style={{ fontSize: 16 }}>🏃</Text>
+                                            <Ionicons name={getCategoryIcon(selectedItem.data.category) as any} size={18} color="#FF5028" />
                                         </View>
                                         <View style={styles.liveBadge}><Text style={styles.liveBadgeTxt}>AO VIVO</Text></View>
                                     </View>

@@ -4,18 +4,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMapFilterStore } from '@/src/store/useMapFilterStore';
 
 const INTERESTS = [
-    { id: '1', label: 'Esportes', icon: '⚽' },
-    { id: '2', label: 'Cultural', icon: '🎭' },
-    { id: '3', label: 'Gastronômico', icon: '🍽️' },
-    { id: '4', label: 'Aventura', icon: '🏔️' },
-    { id: '5', label: 'Musical', icon: '🎵' },
-    { id: '6', label: 'Família', icon: '👨‍👩‍👧‍👦' },
-    { id: '7', label: 'Business', icon: '💼' },
-    { id: '8', label: 'Ecotour', icon: '🌿' },
-    { id: '9', label: 'Histórico', icon: '🏛️' },
-    { id: '10', label: 'Rural', icon: '🌾' },
-    { id: '11', label: 'Summer', icon: '☀️' },
-    { id: '12', label: 'Romance', icon: '💑' },
+    { id: '1', label: 'Esportes', icon: 'football-outline' },
+    { id: '2', label: 'Cultural', icon: 'color-palette-outline' },
+    { id: '3', label: 'Gastronômico', icon: 'restaurant-outline' },
+    { id: '4', label: 'Aventura', icon: 'trail-sign-outline' },
+    { id: '5', label: 'Musical', icon: 'musical-notes-outline' },
+    { id: '6', label: 'Família', icon: 'people-outline' },
+    { id: '7', label: 'Business', icon: 'briefcase-outline' },
+    { id: '8', label: 'Ecotour', icon: 'leaf-outline' },
+    { id: '9', label: 'Histórico', icon: 'business-outline' },
+    { id: '10', label: 'Rural', icon: 'leaf-outline' },
+    { id: '11', label: 'Summer', icon: 'sunny-outline' },
+    { id: '12', label: 'Romance', icon: 'heart-outline' },
 ] as const;
 
 interface FilterMeetingsSheetProps {
@@ -66,7 +66,7 @@ export const FilterMeetingsSheet: React.FC<FilterMeetingsSheetProps> = ({ onClos
                     </TouchableOpacity>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#fff0ec', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
-                            <Text style={{ fontSize: 16 }}>🎯</Text>
+                            <Ionicons name="calendar-outline" size={18} color="#ff5028" />
                         </View>
                         <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937' }}>Encontros</Text>
                     </View>
@@ -94,7 +94,7 @@ export const FilterMeetingsSheet: React.FC<FilterMeetingsSheetProps> = ({ onClos
                                     borderWidth: 1, borderColor: isSelected ? '#ff5028' : '#E5E7EB'
                                 }}
                             >
-                                <Text style={{ fontSize: 14, marginRight: 6 }}>{item.icon}</Text>
+                                <Ionicons name={item.icon as any} size={16} color={isSelected ? '#ff5028' : '#6B7280'} style={{ marginRight: 6 }} />
                                 <Text style={{ fontSize: 14, fontWeight: isSelected ? '700' : '600', color: isSelected ? '#ff5028' : '#4B5563' }}>
                                     {item.label}
                                 </Text>

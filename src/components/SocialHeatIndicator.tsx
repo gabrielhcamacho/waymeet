@@ -1,7 +1,8 @@
 import React from 'react';
 import { View } from 'react-native';
-import { Text } from '@/src/components/ui/text';
+import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
+import { Text } from '@/src/components/ui/text';
 import { HeatZone } from '../types';
 
 interface SocialHeatIndicatorProps {
@@ -29,7 +30,7 @@ export const SocialHeatIndicator: React.FC<SocialHeatIndicatorProps> = ({ zone }
                 />
             </View>
             {zone.intensity >= 0.7 && (
-                <Text className="text-xs ml-2">🔥</Text>
+                <Ionicons name="flame" size={14} color="#EF4444" style={{ marginLeft: 8 }} />
             )}
         </View>
     );

@@ -1,0 +1,45 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeReadFile": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/file-activity-hook.sh read-start"
+      }
+    ],
+    "afterFileEdit": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/file-activity-hook.sh write-end"
+      }
+    ],
+    "beforeShellExecution": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-end"
+      }
+    ],
+    "afterShellExecution": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-start"
+      }
+    ],
+    "beforeMCPExecution": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-end"
+      }
+    ],
+    "afterMCPExecution": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-start"
+      }
+    ],
+    "afterAgentThought": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-start"
+      }
+    ],
+    "beforeSubmitPrompt": [
+      {
+        "command": "/Users/gabriel/.npm/_npx/a1888f29b73c51e2/node_modules/codemap-hotel/hooks/thinking-hook.sh thinking-end"
+      }
+    ]
+  }
+}

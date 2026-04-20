@@ -152,6 +152,15 @@ export const useUserStore = create<UserStore>((set, get) => ({
                     selected_categories: updates.selectedCategories,
                 },
             });
+
+            // Also update the profiles table directly
+            supabase.from('profiles').update({
+                ...(updates.displayName !== undefined && { display_name: updates.displayName }),
+                ...(updates.avatarUrl !== undefined && { avatar_url: updates.avatarUrl }),
+                ...(updates.coverPhotoUrl !== undefined && { cover_photo_url: updates.coverPhotoUrl }),
+                ...(updates.homeCity !== undefined && { home_city: updates.homeCity }),
+                ...(updates.bio !== undefined && { bio: updates.bio }),
+            }).eq('id', user.id);
         }
     },
 

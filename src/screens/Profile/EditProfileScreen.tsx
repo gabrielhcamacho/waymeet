@@ -3,6 +3,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/src/components/ui/text';
 import * as ImagePicker from 'expo-image-picker';
 import React, { useState, useMemo } from 'react';
+import { supabase } from '../../config/supabase';
 import { TextField } from './components/edit/TextField';
 import { PhotoHeader } from './components/edit/PhotoHeader';
 import { TabSwitcher } from './components/edit/TabSwitcher';
@@ -45,6 +46,7 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
     const [avatarConfig, setAvatarConfig] = useState<AvatarConfig>(() =>
         parseConfig(user?.secondaryAvatarSeed || ''),
     );
+    const [isSaving, setIsSaving] = useState(false);
     const [activeAvatarCategory, setActiveAvatarCategory] = useState<typeof AVATAR_CATEGORY_ORDER[number]>(
         AVATAR_CATEGORY_ORDER[0],
     );
@@ -133,17 +135,59 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
         }
     };
 
-    const handleSave = () => {
-        updateProfile({
-            displayName: name,
-            homeCity: city,
-            bio,
-            avatarUrl,
-            secondaryAvatarSeed: serializeConfig(avatarConfig),
-            coverPhotoUrl,
-            selectedCategories,
-        });
-        navigation.goBack();
+    const handleSave = async () => {
+        const { user } = useUserStore.getState();
+        if (!user) return;
+
+        setIsSaving(true);
+        try {
+            let finalAvatarUrl = avatarUrl;
+            let finalCoverUrl = coverPhotoUrl;
+
+            // Upload avatar if it's a local file URI
+            if (avatarUrl && !avatarUrl.startsWith('http')) {
+                const response = await fetch(avatarUrl);
+                const arrayBuffer = await response.arrayBuffer();
+                const path = `${user.id}/${Date.now()}_avatar.jpg`;
+                const { error: uploadError } = await supabase.storage
+                    .from('avatars')
+                    .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
+                if (!uploadError) {
+                    const { data } = supabase.storage.from('avatars').getPublicUrl(path);
+                    finalAvatarUrl = data.publicUrl;
+                }
+            }
+
+            // Upload cover photo if it's a local file URI
+            if (coverPhotoUrl && !coverPhotoUrl.startsWith('http')) {
+                const response = await fetch(coverPhotoUrl);
+                const arrayBuffer = await response.arrayBuffer();
+                const path = `${user.id}/${Date.now()}_cover.jpg`;
+                const { error: uploadError } = await supabase.storage
+                    .from('covers')
+                    .upload(path, arrayBuffer, { contentType: 'image/jpeg', upsert: true });
+                if (!uploadError) {
+                    const { data } = supabase.storage.from('covers').getPublicUrl(path);
+                    finalCoverUrl = data.publicUrl;
+                }
+            }
+
+            updateProfile({
+                displayName: name,
+                homeCity: city,
+                bio,
+                avatarUrl: finalAvatarUrl,
+                secondaryAvatarSeed: serializeConfig(avatarConfig),
+                coverPhotoUrl: finalCoverUrl,
+                selectedCategories,
+            });
+            navigation.goBack();
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            Alert.alert('Erro', 'Não foi possível salvar as alterações. Tente novamente.');
+        } finally {
+            setIsSaving(false);
+        }
     };
 
     const handleDelete = () => {
@@ -161,8 +205,8 @@ export const EditProfileScreen: React.FC<{ navigation: any }> = ({ navigation })
                     <Ionicons name="arrow-back" size={24} color={Colors.text} />
                 </TouchableOpacity>
                 <Text className="text-xl font-bold text-text">Editar Perfil</Text>
-                <TouchableOpacity onPress={handleSave}>
-                    <Text className="text-base font-semibold text-primary">Salvar</Text>
+                <TouchableOpacity onPress={handleSave} disabled={isSaving}>
+                    <Text className="text-base font-semibold text-primary">{isSaving ? 'Salvando...' : 'Salvar'}</Text>
                 </TouchableOpacity>
             </View>
 

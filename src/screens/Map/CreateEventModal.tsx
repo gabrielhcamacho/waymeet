@@ -1,9 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
     View, StyleSheet, TouchableOpacity, ScrollView, TextInput,
-    KeyboardAvoidingView, Platform, Alert,
+    KeyboardAvoidingView, Platform, Alert, Modal,
 } from 'react-native';
+import MapLibreGL from '@maplibre/maplibre-react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { locationService } from '../../services/locationService';
+
+MapLibreGL.setAccessToken(null);
 import { Colors, FontSize, BorderRadius, Shadows } from '../../config/theme';
 import { Text } from '@/src/components/ui/text';
 import { CategoryChip } from '../../components/CategoryChip';
@@ -32,14 +36,26 @@ export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ ro
 
     const [locationSuggestions, setLocationSuggestions] = useState<Place[]>([]);
     const [isSearchingLocation, setIsSearchingLocation] = useState(false);
+    const [userLocation, setUserLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+    const [showMapPicker, setShowMapPicker] = useState(false);
+    const [pickedCoord, setPickedCoord] = useState<{ latitude: number; longitude: number } | null>(null);
+
+    useEffect(() => {
+        locationService.getCurrentLocation()
+            .then(loc => { if (loc) setUserLocation(loc); })
+            .catch(() => {});
+    }, []);
 
     // Call autocomplete when user types
     const handleLocationSearch = async (text: string) => {
         setLocationName(text);
         if (text.length > 2) {
             setIsSearchingLocation(true);
-            const suggestions = await foursquareService.searchPlacesAutocomplete(text, latitude, longitude);
+            const lat = userLocation?.latitude ?? latitude;
+            const lng = userLocation?.longitude ?? longitude;
+            const suggestions = await foursquareService.searchPlacesAutocomplete(text, lat, lng);
             setLocationSuggestions(suggestions);
+            setIsSearchingLocation(false);
         } else {
             setLocationSuggestions([]);
             setIsSearchingLocation(false);
@@ -153,6 +169,18 @@ export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ ro
                             ))}
                         </View>
                     )}
+
+                    {/* Pick on map button */}
+                    <TouchableOpacity
+                        onPress={() => setShowMapPicker(true)}
+                        style={{ flexDirection: 'row', alignItems: 'center', marginTop: 8, gap: 6 }}
+                        activeOpacity={0.7}
+                    >
+                        <Ionicons name="map-outline" size={16} color={Colors.primary} />
+                        <Text style={{ fontSize: 13, color: Colors.primary, fontWeight: '600' }}>
+                            Escolher no mapa
+                        </Text>
+                    </TouchableOpacity>
                 </View>
 
                 {/* Date & Time */}
@@ -265,6 +293,77 @@ export const CreateEventModal: React.FC<{ route: any; navigation: any }> = ({ ro
                     <Text style={styles.createButtonText}>Criar Encontro</Text>
                 </TouchableOpacity>
             </ScrollView>
+            {/* Map Location Picker Modal */}
+            <Modal visible={showMapPicker} animationType="slide" onRequestClose={() => setShowMapPicker(false)}>
+                <View style={{ flex: 1 }}>
+                    {/* Header */}
+                    <View style={{
+                        flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                        paddingHorizontal: 16, paddingTop: 52, paddingBottom: 16,
+                        backgroundColor: Colors.background, borderBottomWidth: 1, borderBottomColor: Colors.border
+                    }}>
+                        <TouchableOpacity onPress={() => setShowMapPicker(false)}>
+                            <Ionicons name="close" size={24} color={Colors.text} />
+                        </TouchableOpacity>
+                        <Text style={{ fontSize: 16, fontWeight: '700', color: Colors.text }}>Escolher local no mapa</Text>
+                        <View style={{ width: 24 }} />
+                    </View>
+                    {/* Instructions */}
+                    <View style={{ paddingHorizontal: 16, paddingVertical: 10, backgroundColor: '#FFF7ED', borderBottomWidth: 1, borderBottomColor: '#FED7AA' }}>
+                        <Text style={{ fontSize: 13, color: '#92400E', textAlign: 'center' }}>
+                            Toque no mapa para marcar o local do encontro
+                        </Text>
+                    </View>
+                    {/* Map */}
+                    <MapLibreGL.MapView
+                        style={{ flex: 1 }}
+                        styleURL="https://tiles.openfreemap.org/styles/liberty"
+                        onPress={(feature: any) => {
+                            if (feature?.geometry?.coordinates) {
+                                const [lng, lat] = feature.geometry.coordinates;
+                                setPickedCoord({ latitude: lat, longitude: lng });
+                            }
+                        }}
+                    >
+                        <MapLibreGL.Camera
+                            zoomLevel={14}
+                            centerCoordinate={[
+                                userLocation?.longitude ?? longitude,
+                                userLocation?.latitude ?? latitude
+                            ]}
+                            animationMode="flyTo"
+                            animationDuration={500}
+                        />
+                        {pickedCoord && (
+                            <MapLibreGL.PointAnnotation
+                                id="picked-location"
+                                coordinate={[pickedCoord.longitude, pickedCoord.latitude]}
+                            >
+                                <View style={{ width: 36, height: 36, backgroundColor: '#FF5028', borderRadius: 18, justifyContent: 'center', alignItems: 'center', borderWidth: 3, borderColor: 'white' }}>
+                                    <Ionicons name="location" size={18} color="white" />
+                                </View>
+                            </MapLibreGL.PointAnnotation>
+                        )}
+                    </MapLibreGL.MapView>
+                    {/* Confirm Button */}
+                    {pickedCoord && (
+                        <View style={{ padding: 16, backgroundColor: Colors.background }}>
+                            <TouchableOpacity
+                                onPress={() => {
+                                    setLatitude(pickedCoord.latitude);
+                                    setLongitude(pickedCoord.longitude);
+                                    setLocationName(`${pickedCoord.latitude.toFixed(5)}, ${pickedCoord.longitude.toFixed(5)}`);
+                                    setPickedCoord(null);
+                                    setShowMapPicker(false);
+                                }}
+                                style={{ backgroundColor: Colors.primary, paddingVertical: 16, borderRadius: 12, alignItems: 'center' }}
+                            >
+                                <Text style={{ color: Colors.textInverse, fontSize: 15, fontWeight: '700' }}>Confirmar local</Text>
+                            </TouchableOpacity>
+                        </View>
+                    )}
+                </View>
+            </Modal>
         </KeyboardAvoidingView>
     );
 };

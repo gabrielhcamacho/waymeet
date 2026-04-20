@@ -4,9 +4,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMapFilterStore } from '@/src/store/useMapFilterStore';
 
 const MY_INTERESTS = [
-    { id: '1', label: 'Esportes', icon: '⚽' },
-    { id: '4', label: 'Aventura', icon: '🏔️' },
-    { id: '9', label: 'Histórico', icon: '🏛️' }
+    { id: '1', label: 'Esportes', icon: 'football-outline' },
+    { id: '4', label: 'Aventura', icon: 'trail-sign-outline' },
+    { id: '9', label: 'Histórico', icon: 'business-outline' }
 ] as const;
 
 interface FilterPeopleSheetProps {
@@ -56,7 +56,7 @@ export const FilterPeopleSheet: React.FC<FilterPeopleSheetProps> = ({ onClose, t
                     </TouchableOpacity>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#f0f7ff', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
-                            <Text style={{ fontSize: 16 }}>👥</Text>
+                            <Ionicons name="people-outline" size={18} color="#4682ff" />
                         </View>
                         <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937' }}>Pessoas</Text>
                     </View>
@@ -143,7 +143,7 @@ export const FilterPeopleSheet: React.FC<FilterPeopleSheetProps> = ({ onClose, t
                                     borderWidth: 1, borderColor: isSelected ? '#4682ff' : '#E5E7EB'
                                 }}
                             >
-                                <Text style={{ fontSize: 14, marginRight: 6 }}>{item.icon}</Text>
+                                <Ionicons name={item.icon as any} size={16} color={isSelected ? '#4682ff' : '#6B7280'} style={{ marginRight: 6 }} />
                                 <Text style={{ fontSize: 14, fontWeight: isSelected ? '700' : '600', color: isSelected ? '#4682ff' : '#4B5563' }}>
                                     {item.label}
                                 </Text>

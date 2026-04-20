@@ -91,7 +91,7 @@ export const MapFilterScreen = () => {
                 {/* Categories Options */}
                 <View style={{ backgroundColor: '#fff', borderRadius: 16 }}>
                     <FilterRowItem
-                        icon="🎯"
+                        iconName="calendar-outline"
                         title="Encontros"
                         subtitle={encontrosCount > 0 ? "Filtros aplicados" : "Esportes, Cultural, etc."}
                         count={encontrosCount}
@@ -99,7 +99,7 @@ export const MapFilterScreen = () => {
                         onPress={() => openSheet('encontros')}
                     />
                     <FilterRowItem
-                        icon="👥"
+                        iconName="people-outline"
                         title="Pessoas"
                         subtitle={pessoasCount > 0 ? "Filtros aplicados" : "18-35 anos · Moradores"}
                         count={pessoasCount}
@@ -107,7 +107,7 @@ export const MapFilterScreen = () => {
                         onPress={() => openSheet('pessoas')}
                     />
                     <FilterRowItem
-                        icon="🏛️"
+                        iconName="business-outline"
                         title="Lugares"
                         subtitle={lugaresCount > 0 ? "Filtros aplicados" : "Cafés, Bares · Vibe relaxada"}
                         count={lugaresCount}
@@ -146,7 +146,7 @@ export const MapFilterScreen = () => {
     );
 };
 
-const FilterRowItem = ({ icon, title, subtitle, count, badgeColor, onPress, isLast = false }: any) => (
+const FilterRowItem = ({ iconName, title, subtitle, count, badgeColor, onPress, isLast = false }: any) => (
     <TouchableOpacity
         onPress={onPress}
         style={{
@@ -158,7 +158,7 @@ const FilterRowItem = ({ icon, title, subtitle, count, badgeColor, onPress, isLa
         }}
     >
         <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: `${badgeColor}15`, alignItems: 'center', justifyContent: 'center', marginRight: 16 }}>
-            <Text style={{ fontSize: 20 }}>{icon}</Text>
+            <Ionicons name={iconName} size={20} color={badgeColor} />
         </View>
         <View style={{ flex: 1 }}>
             <Text style={{ fontSize: 16, fontWeight: '700', color: '#1F2937', marginBottom: 2 }}>{title}</Text>

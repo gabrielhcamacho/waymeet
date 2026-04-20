@@ -1,9 +1,13 @@
 import { create } from 'zustand';
 import { ActivityFeedItem, ActivityFeedType } from '../types';
 import { generateId } from '../utils/helpers';
+import * as activityFeedService from '../services/activityFeedService';
 
 interface ActivityFeedStore {
     recentActivities: ActivityFeedItem[];
+
+    /** Fetch activities from Supabase (with MOCK fallback) */
+    fetchActivities: () => Promise<void>;
 
     /** Add a new activity to the feed (max 30 items) */
     addActivity: (
@@ -26,6 +30,11 @@ const MAX_FEED_ITEMS = 30;
 
 export const useActivityFeedStore = create<ActivityFeedStore>((set, get) => ({
     recentActivities: [],
+
+    fetchActivities: async () => {
+        const data = await activityFeedService.fetchRecentActivity(20);
+        set({ recentActivities: data });
+    },
 
     addActivity: (type, userId, userName, userAvatar, description, metadata) => {
         const item: ActivityFeedItem = {

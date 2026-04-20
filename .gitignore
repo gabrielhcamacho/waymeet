@@ -40,3 +40,8 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+#claude
+.claude
+.claude-flow
+claude.md

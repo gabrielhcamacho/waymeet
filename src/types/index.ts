@@ -102,7 +102,7 @@ export interface WayMeetEvent {
 
 export interface NearbyActivity {
     id: string;
-    emoji: string;
+    iconName: string;
     label: string;
     peopleCount: number;
     distance: string;

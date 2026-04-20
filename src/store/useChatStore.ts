@@ -2,37 +2,38 @@ import { create } from 'zustand';
 import { ChatMessage } from '../types';
 import { MOCK_MESSAGES, MOCK_USERS } from '../data/mockData';
 import { generateId } from '../utils/helpers';
+import * as chatService from '../services/chatService';
 
 interface ChatStore {
     messages: Record<string, ChatMessage[]>;
     isLoading: boolean;
 
-    fetchMessages: (eventId: string) => Promise<void>;
-    sendMessage: (eventId: string, userId: string, text: string) => void;
+    fetchMessages: (eventId: string, type?: 'event' | 'community') => Promise<void>;
+    sendMessage: (eventId: string, userId: string, text: string, type?: 'event' | 'community') => Promise<void>;
     addSystemMessage: (eventId: string, text: string) => void;
+    subscribeToRoom: (eventId: string, type?: 'event' | 'community') => () => void;
 }
 
 export const useChatStore = create<ChatStore>((set, get) => ({
     messages: { '1': MOCK_MESSAGES },
     isLoading: false,
 
-    fetchMessages: async (eventId: string) => {
+    fetchMessages: async (eventId: string, type: 'event' | 'community' = 'event') => {
         set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 300));
-        const { messages } = get();
-        if (!messages[eventId]) {
-            set((state) => ({
-                messages: { ...state.messages, [eventId]: [] },
-                isLoading: false,
-            }));
-        } else {
-            set({ isLoading: false });
-        }
+        const data = await chatService.fetchMessages(eventId, type);
+        set((state) => ({
+            messages: {
+                ...state.messages,
+                [eventId]: data.length > 0 ? data : (state.messages[eventId] || []),
+            },
+            isLoading: false,
+        }));
     },
 
-    sendMessage: (eventId: string, userId: string, text: string) => {
+    sendMessage: async (eventId: string, userId: string, text: string, type: 'event' | 'community' = 'event') => {
+        // Optimistic update
         const user = MOCK_USERS.find((u) => u.id === userId) || MOCK_USERS[0];
-        const newMessage: ChatMessage = {
+        const optimistic: ChatMessage = {
             id: generateId(),
             eventId,
             userId,
@@ -44,9 +45,12 @@ export const useChatStore = create<ChatStore>((set, get) => ({
         set((state) => ({
             messages: {
                 ...state.messages,
-                [eventId]: [...(state.messages[eventId] || []), newMessage],
+                [eventId]: [...(state.messages[eventId] || []), optimistic],
             },
         }));
+
+        // Persist to Supabase (silent fail — optimistic message stays)
+        await chatService.sendMessage(eventId, userId, text, false, type);
     },
 
     addSystemMessage: (eventId: string, text: string) => {
@@ -65,5 +69,18 @@ export const useChatStore = create<ChatStore>((set, get) => ({
                 [eventId]: [...(state.messages[eventId] || []), systemMessage],
             },
         }));
+    },
+
+    subscribeToRoom: (eventId: string, type: 'event' | 'community' = 'event') => {
+        return chatService.subscribeToMessages(eventId, (msg) => {
+            set((state) => {
+                const existing = state.messages[eventId] || [];
+                // Avoid duplicates (realtime may echo our own sends)
+                if (existing.some((m) => m.id === msg.id)) return state;
+                return {
+                    messages: { ...state.messages, [eventId]: [...existing, msg] },
+                };
+            });
+        }, type);
     },
 }));

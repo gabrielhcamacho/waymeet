@@ -3,6 +3,7 @@ import { WayMeetEvent, FilterState } from '../types';
 import { MOCK_EVENTS } from '../data/mockData';
 import { generateId } from '../utils/helpers';
 import { MOCK_USERS } from '../data/mockData';
+import * as eventsService from '../services/eventsService';
 
 export type EventUserStatus = 'none' | 'interested' | 'confirmed' | 'arrived';
 
@@ -37,15 +38,15 @@ const DEFAULT_FILTERS: FilterState = {
 };
 
 export const useEventsStore = create<EventsStore>((set, get) => ({
-    events: MOCK_EVENTS,
+    events: [],
     filters: { ...DEFAULT_FILTERS },
     isLoading: false,
     userEventStatus: {},
 
     fetchEvents: async () => {
         set({ isLoading: true });
-        await new Promise((resolve) => setTimeout(resolve, 500));
-        set({ events: MOCK_EVENTS, isLoading: false });
+        const data = await eventsService.fetchEvents();
+        set({ events: data, isLoading: false });
     },
 
     createEvent: (eventData) => {

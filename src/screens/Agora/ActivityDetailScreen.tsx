@@ -2,6 +2,7 @@ import React from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/src/components/ui/text';
+import { User } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { NearbyActivity } from '../../types';
 
@@ -22,10 +23,10 @@ export const ActivityDetailScreen: React.FC<{ route: any; navigation: any }> = (
                     </TouchableOpacity>
                 </View>
 
-                {/* Emoji hero */}
+                {/* Icon hero */}
                 <View className="items-center mb-6">
-                    <View className="w-24 h-24 rounded-3xl bg-gray-50 items-center justify-center mb-4">
-                        <Text className="text-5xl">{activity.emoji}</Text>
+                    <View className="w-24 h-24 rounded-3xl bg-orange-50 items-center justify-center mb-4">
+                        <Ionicons name={activity.iconName as any} size={44} color="#FF7A00" />
                     </View>
                     <Text className="text-2xl font-bold text-gray-900">{activity.label}</Text>
                     {activity.locationName && (
@@ -64,7 +65,7 @@ export const ActivityDetailScreen: React.FC<{ route: any; navigation: any }> = (
                     <View className="flex-row gap-3">
                         {Array.from({ length: Math.min(activity.peopleCount, 5) }).map((_, i) => (
                             <View key={i} className="w-11 h-11 rounded-full bg-gray-100 items-center justify-center">
-                                <Text className="text-lg">{['👩', '👨', '🧑', '👩‍🦱', '👨‍🦰'][i % 5]}</Text>
+                                <User size={20} color="#9CA3AF" strokeWidth={1.5} />
                             </View>
                         ))}
                         {activity.peopleCount > 5 && (

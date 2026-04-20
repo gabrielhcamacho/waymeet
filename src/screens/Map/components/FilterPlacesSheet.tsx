@@ -4,28 +4,28 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMapFilterStore } from '@/src/store/useMapFilterStore';
 
 const PLACE_TYPES = [
-    { id: 'Cafés', icon: '☕' },
-    { id: 'Bares', icon: '🍺' },
-    { id: 'Restaurantes', icon: '🍽️' },
-    { id: 'Cultura', icon: '🎭' },
-    { id: 'Natureza', icon: '🌿' },
-    { id: 'Esporte', icon: '⚽' },
-    { id: 'Compras', icon: '🛍️' },
-    { id: 'Shows', icon: '🎵' },
-    { id: 'Arte', icon: '🎨' },
+    { id: 'Cafés', icon: 'cafe-outline' },
+    { id: 'Bares', icon: 'beer-outline' },
+    { id: 'Restaurantes', icon: 'restaurant-outline' },
+    { id: 'Cultura', icon: 'color-palette-outline' },
+    { id: 'Natureza', icon: 'leaf-outline' },
+    { id: 'Esporte', icon: 'football-outline' },
+    { id: 'Compras', icon: 'bag-outline' },
+    { id: 'Shows', icon: 'musical-notes-outline' },
+    { id: 'Arte', icon: 'color-palette-outline' },
 ];
 
 const VIBES = [
-    { id: 'Relaxado', icon: '😌' },
-    { id: 'Agitado', icon: '🔥' },
-    { id: 'Pra conversar', icon: '💬' },
-    { id: 'Festivo', icon: '🎉' },
-    { id: 'Tranquilo', icon: '🧘' },
-    { id: 'Work-friendly', icon: '👨‍💻' },
-    { id: 'Noturno', icon: '🌙' },
-    { id: 'Diurno', icon: '🌞' },
-    { id: 'Romântico', icon: '💑' },
-    { id: 'Família', icon: '👨‍👩‍👧‍👦' },
+    { id: 'Relaxado', icon: 'happy-outline' },
+    { id: 'Agitado', icon: 'flame-outline' },
+    { id: 'Pra conversar', icon: 'chatbubbles-outline' },
+    { id: 'Festivo', icon: 'sparkles-outline' },
+    { id: 'Tranquilo', icon: 'body-outline' },
+    { id: 'Work-friendly', icon: 'laptop-outline' },
+    { id: 'Noturno', icon: 'moon-outline' },
+    { id: 'Diurno', icon: 'sunny-outline' },
+    { id: 'Romântico', icon: 'heart-outline' },
+    { id: 'Família', icon: 'people-outline' },
 ];
 
 interface FilterPlacesSheetProps {
@@ -85,7 +85,7 @@ export const FilterPlacesSheet: React.FC<FilterPlacesSheetProps> = ({ onClose, t
                     </TouchableOpacity>
                     <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                         <View style={{ width: 32, height: 32, borderRadius: 10, backgroundColor: '#f0fdf6', alignItems: 'center', justifyContent: 'center', marginRight: 8 }}>
-                            <Text style={{ fontSize: 16 }}>🏛️</Text>
+                            <Ionicons name="business-outline" size={18} color="#28c878" />
                         </View>
                         <Text style={{ fontSize: 18, fontWeight: 'bold', color: '#1F2937' }}>Lugares</Text>
                     </View>
@@ -113,7 +113,7 @@ export const FilterPlacesSheet: React.FC<FilterPlacesSheetProps> = ({ onClose, t
                                     borderWidth: 1, borderColor: isSelected ? '#28c878' : '#E5E7EB'
                                 }}
                             >
-                                <Text style={{ fontSize: 14, marginRight: 6 }}>{item.icon}</Text>
+                                <Ionicons name={item.icon as any} size={16} color={isSelected ? '#28c878' : '#6B7280'} style={{ marginRight: 6 }} />
                                 <Text style={{ fontSize: 14, fontWeight: isSelected ? '700' : '600', color: isSelected ? '#28c878' : '#4B5563' }}>
                                     {item.id}
                                 </Text>
@@ -139,7 +139,7 @@ export const FilterPlacesSheet: React.FC<FilterPlacesSheetProps> = ({ onClose, t
                                     borderWidth: 1, borderColor: isSelected ? '#28c878' : '#E5E7EB'
                                 }}
                             >
-                                <Text style={{ fontSize: 14, marginRight: 6 }}>{item.icon}</Text>
+                                <Ionicons name={item.icon as any} size={16} color={isSelected ? '#28c878' : '#6B7280'} style={{ marginRight: 6 }} />
                                 <Text style={{ fontSize: 14, fontWeight: isSelected ? '700' : '600', color: isSelected ? '#28c878' : '#4B5563' }}>
                                     {item.id}
                                 </Text>

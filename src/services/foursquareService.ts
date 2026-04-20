@@ -169,6 +169,7 @@ export const foursquareService = {
                 ll: `${latitude},${longitude}`,
                 query: query,
                 limit: '5',
+                radius: '5000',
             });
 
             const response = await fetch(`${BASE_URL}/suggestcompletion?${params.toString()}`);

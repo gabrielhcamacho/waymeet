@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity, ImageBackground, Dimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Users, Heart, Mountain, Theater, MapPin } from 'lucide-react-native';
 import { Text } from '@/src/components/ui/text';
 import { SectionHeader } from '../../components/SectionHeader';
 import { SocialRouteCard } from '../../components/SocialRouteCard';
@@ -9,23 +10,31 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MOCK_ROUTES, MOCK_PLACES, MOCK_COMMUNITIES } from '../../data/mockData';
 import { SearchBar } from '../../components/SearchBar';
 import { useUIStore } from '../../store/useUIStore';
+import { useEventsStore } from '../../store/useEventsStore';
 import { ExploreTab } from '../../types';
 
 const { width } = Dimensions.get('window');
 
 const EXPLORE_TABS: ExploreTab[] = ['Tudo', 'Recomendados', 'Rotas de viagem', 'Internacional', 'Hoje'];
 
-const QUICK_FILTERS = [
-    { id: '1', name: 'Family Friendly', icon: '👨‍👩‍👧‍👦' },
-    { id: '2', name: 'Romantico', icon: '💑' },
-    { id: '3', name: 'Aventura', icon: '🏔️' },
-    { id: '4', name: 'Cultural', icon: '🎭' },
+type QuickFilterItem = { id: string; name: string; Icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }> };
+
+const QUICK_FILTERS: QuickFilterItem[] = [
+    { id: '1', name: 'Family Friendly', Icon: Users },
+    { id: '2', name: 'Romântico', Icon: Heart },
+    { id: '3', name: 'Aventura', Icon: Mountain },
+    { id: '4', name: 'Cultural', Icon: Theater },
 ];
 
 export const ExploreScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const { searchQuery, setSearchQuery, activeExploreTab, setActiveExploreTab } = useUIStore();
     const [activeFilter, setActiveFilter] = useState<string | null>(null);
+    const { fetchEvents } = useEventsStore();
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
 
     return (
         <View className="flex-1 bg-white" style={{ paddingTop: insets.top }}>
@@ -37,6 +46,28 @@ export const ExploreScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                         onChangeText={setSearchQuery}
                         onFilterPress={() => navigation.navigate('ExploreFilters')}
                     />
+                </View>
+
+                {/* Hero Banner */}
+                <View className="mx-5 mb-4 rounded-3xl overflow-hidden" style={{ backgroundColor: '#111827' }}>
+                    <View className="px-5 py-5">
+                        <View className="flex-row items-center gap-2 mb-2">
+                            <MapPin size={12} color="#FF7A00" strokeWidth={2} />
+                            <Text className="text-[11px] font-bold text-orange-500 uppercase tracking-widest">Perto de você</Text>
+                        </View>
+                        <Text className="text-2xl font-bold text-white leading-tight mb-1">
+                            Explore{'\n'}sua cidade
+                        </Text>
+                        <Text className="text-[13px] text-gray-400 mb-4">
+                            Rotas, lugares e comunidades únicas
+                        </Text>
+                        <TouchableOpacity
+                            className="self-start bg-white rounded-full px-4 py-2"
+                            activeOpacity={0.8}
+                        >
+                            <Text className="text-[13px] font-bold text-gray-900">Ver mapa</Text>
+                        </TouchableOpacity>
+                    </View>
                 </View>
 
                 {/* Quick Filters */}
@@ -55,7 +86,7 @@ export const ExploreScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
                             onPress={() => setActiveFilter(activeFilter === filter.id ? null : filter.id)}
                             activeOpacity={0.7}
                         >
-                            <Text className="text-base">{filter.icon}</Text>
+                            <filter.Icon size={14} color={activeFilter === filter.id ? 'white' : '#374151'} strokeWidth={2} />
                             <Text
                                 className={`text-[13px] font-medium ${activeFilter === filter.id
                                     ? 'text-textInverse'
@@ -159,7 +190,7 @@ export const ExploreScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
                 {/* Communities */}
                 <View className="mb-8">
-                    <SectionHeader title="Comunidades" />
+                    <SectionHeader title="Comunidades" onSeeMore={() => navigation.navigate('AllCommunities')} />
                     <ScrollView
                         horizontal
                         showsHorizontalScrollIndicator={false}

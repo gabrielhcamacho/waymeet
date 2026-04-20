@@ -1,5 +1,6 @@
 import React from 'react';
 import { View, TouchableOpacity } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Text } from '@/src/components/ui/text';
 import { NearbyActivity } from '../types';
 
@@ -22,9 +23,9 @@ export const NearbyActivityCard: React.FC<NearbyActivityCardProps> = ({ activity
                 elevation: 2,
             }}
         >
-            {/* Emoji container */}
+            {/* Icon container */}
             <View className="w-12 h-12 bg-orange-50 rounded-2xl items-center justify-center mr-4">
-                <Text className="text-2xl">{activity.emoji}</Text>
+                <Ionicons name={activity.iconName as any} size={22} color="#FF7A00" />
             </View>
 
             {/* Content */}

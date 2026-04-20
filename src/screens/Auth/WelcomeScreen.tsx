@@ -3,6 +3,7 @@ import { View, TouchableOpacity, StyleSheet, ImageBackground, StatusBar } from '
 import { Colors, FontSize } from '../../config/theme';
 import { Text } from '@/src/components/ui/text';
 import { Ionicons } from '@expo/vector-icons';
+import { MapPin, Calendar, Users } from 'lucide-react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export const WelcomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
@@ -16,10 +17,22 @@ export const WelcomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
         >
             <StatusBar barStyle="light-content" />
 
+            {/* Dark overlay */}
+            <View style={{ ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.38)' }} />
+
             {/* Header text */}
             <View style={[styles.headerContainer, { paddingTop: insets.top + 40 }]}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 16 }}>
+                    <View style={{ backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, padding: 8 }}>
+                        <Ionicons name="location" size={22} color="white" />
+                    </View>
+                    <Text style={{ fontSize: 18, fontWeight: '700', color: 'white', letterSpacing: 1 }}>WayMeet</Text>
+                </View>
                 <Text style={styles.headerText}>
-                    Explore o{'\n'}melhor da{'\n'}vida
+                    Conecte-se{'\n'}com quem{'\n'}está perto
+                </Text>
+                <Text style={styles.subtitleText}>
+                    Descubra eventos, lugares e pessoas na sua cidade
                 </Text>
             </View>
 
@@ -27,6 +40,19 @@ export const WelcomeScreen: React.FC<{ navigation: any }> = ({ navigation }) => 
 
             {/* Bottom section with buttons */}
             <View style={[styles.bottomContent, { paddingBottom: insets.bottom + 20 }]}>
+                {/* Feature pills */}
+                <View style={{ flexDirection: 'row', gap: 12, marginBottom: 24, width: '100%' }}>
+                    {([
+                        { Icon: Calendar, label: 'Eventos' },
+                        { Icon: Users, label: 'Pessoas' },
+                        { Icon: MapPin, label: 'Lugares' },
+                    ] as const).map(({ Icon, label }) => (
+                        <View key={label} style={{ flex: 1, alignItems: 'center', backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 12, paddingVertical: 10, gap: 4 }}>
+                            <Icon size={18} color="white" strokeWidth={2} />
+                            <Text style={{ fontSize: 11, color: 'white', fontWeight: '600' }}>{label}</Text>
+                        </View>
+                    ))}
+                </View>
                 <TouchableOpacity
                     style={styles.startButton}
                     onPress={() => navigation.navigate('Signup')}
@@ -68,6 +94,12 @@ const styles = StyleSheet.create({
         textShadowColor: 'rgba(0,0,0,0.1)',
         textShadowOffset: { width: 0, height: 2 },
         textShadowRadius: 4,
+    },
+    subtitleText: {
+        fontSize: 16,
+        color: 'rgba(255,255,255,0.85)',
+        marginTop: 12,
+        lineHeight: 24,
     },
     spacer: {
         flex: 1,

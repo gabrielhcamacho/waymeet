@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, ScrollView, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { Coffee, Dumbbell, Globe, Music, Search, Zap, Wine } from 'lucide-react-native';
 import { Text } from '@/src/components/ui/text';
 import { SectionHeader } from '../../components/SectionHeader';
 import { NearbyActivityCard } from '../../components/NearbyActivityCard';
@@ -9,13 +10,15 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useEventsStore } from '../../store/useEventsStore';
 import { MOCK_NEARBY_ACTIVITIES } from '../../data/mockData';
 
-const FILTER_OPTIONS = [
-    { id: 'all', emoji: '✨', label: 'Tudo' },
-    { id: 'cafe', emoji: '☕', label: 'Café' },
-    { id: 'drinks', emoji: '🍻', label: 'Drinks' },
-    { id: 'esporte', emoji: '⚽', label: 'Esporte' },
-    { id: 'explorar', emoji: '🚶', label: 'Explorar' },
-    { id: 'musica', emoji: '🎵', label: 'Música' },
+type FilterOption = { id: string; Icon: React.ComponentType<{ size: number; color: string; strokeWidth?: number }>; label: string };
+
+const FILTER_OPTIONS: FilterOption[] = [
+    { id: 'all', Icon: Zap, label: 'Tudo' },
+    { id: 'cafe', Icon: Coffee, label: 'Café' },
+    { id: 'drinks', Icon: Wine, label: 'Drinks' },
+    { id: 'esporte', Icon: Dumbbell, label: 'Esporte' },
+    { id: 'explorar', Icon: Globe, label: 'Explorar' },
+    { id: 'musica', Icon: Music, label: 'Música' },
 ];
 
 const FILTER_MAP: Record<string, string[]> = {
@@ -29,7 +32,11 @@ const FILTER_MAP: Record<string, string[]> = {
 export const AgoraScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
     const insets = useSafeAreaInsets();
     const [activeFilter, setActiveFilter] = useState('all');
-    const { events } = useEventsStore();
+    const { events, fetchEvents } = useEventsStore();
+
+    useEffect(() => {
+        fetchEvents();
+    }, []);
 
     // Filter nearby activities by category
     const filteredActivities = activeFilter === 'all'
@@ -116,9 +123,9 @@ export const AgoraScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                                     elevation: isActive ? 3 : 1,
                                 }}
                             >
-                                <Text className="text-sm mr-1.5">{filter.emoji}</Text>
+                                <filter.Icon size={14} color={isActive ? 'white' : '#374151'} strokeWidth={2} />
                                 <Text
-                                    className={`text-[13px] font-semibold ${isActive ? 'text-white' : 'text-gray-700'
+                                    className={`text-[13px] font-semibold ml-1.5 ${isActive ? 'text-white' : 'text-gray-700'
                                         }`}
                                 >
                                     {filter.label}
@@ -141,7 +148,9 @@ export const AgoraScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                         ))
                     ) : (
                         <View className="items-center py-8">
-                            <Text className="text-3xl mb-2">🔍</Text>
+                            <View className="w-14 h-14 bg-gray-100 rounded-2xl items-center justify-center mb-3">
+                                <Search size={24} color="#9CA3AF" strokeWidth={1.5} />
+                            </View>
                             <Text className="text-sm text-gray-400 font-medium">
                                 Nenhuma atividade nessa categoria agora
                             </Text>
@@ -152,7 +161,7 @@ export const AgoraScreen: React.FC<{ navigation: any }> = ({ navigation }) => {
                 {/* Ephemeral Events — with TTL countdown */}
                 {ephemeralEvents.length > 0 && (
                     <View className="mt-4">
-                        <SectionHeader title="⚡ Atividades efêmeras" />
+                        <SectionHeader title="Atividades efêmeras" />
                         {ephemeralEvents.map((event) => (
                             <View key={event.id} className="px-5">
                                 <EventCard

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, StyleSheet, ViewStyle } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { Colors, Shadows } from '../config/theme';
 import { Text } from '@/src/components/ui/text';
 
@@ -30,7 +31,7 @@ export const CategoryChip: React.FC<CategoryChipProps> = ({
             accessibilityLabel={`${label} category${selected ? ', selected' : ''}`}
             accessibilityRole="button"
         >
-            <Text style={styles.icon}>{icon}</Text>
+            <Ionicons name={icon as any} size={20} color={selected ? Colors.textInverse : Colors.text} />
             <Text
                 style={[
                     styles.label,
@@ -64,9 +65,7 @@ const styles = StyleSheet.create({
         borderColor: Colors.border,
         ...Shadows.subtle,
     },
-    icon: {
-        fontSize: 20,
-    },
+
     label: {
         fontSize: 14,
         fontWeight: '500',

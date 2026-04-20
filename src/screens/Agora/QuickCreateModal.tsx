@@ -7,14 +7,14 @@ import { useEventsStore } from '../../store/useEventsStore';
 import { MOCK_USERS } from '../../data/mockData';
 
 const ACTIVITIES = [
-    { id: '1', emoji: '☕', label: 'Café', category: 'Gastronomic' },
-    { id: '2', emoji: '🍻', label: 'Drinks', category: 'Gastronomic' },
-    { id: '3', emoji: '⚽', label: 'Esporte', category: 'Sports' },
-    { id: '4', emoji: '🚶', label: 'Explorar', category: 'Adventures' },
-    { id: '5', emoji: '🎵', label: 'Música', category: 'Musical' },
-    { id: '6', emoji: '🧘', label: 'Yoga', category: 'Sports' },
-    { id: '7', emoji: '🍽️', label: 'Comer', category: 'Gastronomic' },
-    { id: '8', emoji: '📚', label: 'Estudar', category: 'Cultural' },
+    { id: '1', iconName: 'cafe-outline', label: 'Café', category: 'Gastronomic' },
+    { id: '2', iconName: 'wine-outline', label: 'Drinks', category: 'Gastronomic' },
+    { id: '3', iconName: 'football-outline', label: 'Esporte', category: 'Sports' },
+    { id: '4', iconName: 'walk-outline', label: 'Explorar', category: 'Adventures' },
+    { id: '5', iconName: 'musical-notes-outline', label: 'Música', category: 'Musical' },
+    { id: '6', iconName: 'body-outline', label: 'Yoga', category: 'Sports' },
+    { id: '7', iconName: 'restaurant-outline', label: 'Comer', category: 'Gastronomic' },
+    { id: '8', iconName: 'book-outline', label: 'Estudar', category: 'Cultural' },
 ];
 
 const RADIUS_OPTIONS = [
@@ -36,7 +36,7 @@ export const QuickCreateModal: React.FC<{ navigation: any }> = ({ navigation }) 
         if (!activity) return;
 
         createEvent({
-            title: `${activity.emoji} ${activity.label} agora`,
+            title: `${activity.label} agora`,
             description: `Atividade efêmera · Raio de ${selectedRadius}km · Expira em 2h`,
             imageUrl: 'https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?w=400&h=300&fit=crop',
             category: activity.category,
@@ -94,7 +94,7 @@ export const QuickCreateModal: React.FC<{ navigation: any }> = ({ navigation }) 
                                             : 'bg-gray-50 border-transparent'
                                         }`}
                                 >
-                                    <Text className="text-3xl mb-2">{activity.emoji}</Text>
+                                    <Ionicons name={activity.iconName as any} size={32} color={isSelected ? '#FF7A00' : '#6B7280'} style={{ marginBottom: 8 }} />
                                     <Text
                                         className={`text-[15px] font-semibold ${isSelected ? 'text-orange-600' : 'text-gray-700'
                                             }`}
@@ -173,7 +173,7 @@ export const QuickCreateModal: React.FC<{ navigation: any }> = ({ navigation }) 
                         className={`text-base font-bold ${(step === 1 && !selectedActivity) ? 'text-gray-400' : 'text-white'
                             }`}
                     >
-                        {step === 1 ? 'Próximo' : '⚡ Publicar atividade'}
+                        {step === 1 ? 'Próximo' : 'Publicar atividade'}
                     </Text>
                 </TouchableOpacity>
             </View>

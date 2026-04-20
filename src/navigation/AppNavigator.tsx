@@ -21,7 +21,10 @@ import { RouteDetailScreen } from '../screens/Explore/RouteDetailScreen';
 import { PlaceDetailScreen } from '../screens/Explore/PlaceDetailScreen';
 import { CommunityScreen } from '../screens/Community/CommunityScreen';
 import { CommunityDetailScreen } from '../screens/Community/CommunityDetailScreen';
+import { CreateCommunityModal } from '../screens/Community/CreateCommunityModal';
 import { EventDetailScreen } from '../screens/Events/EventDetailScreen';
+import { AllEventsScreen } from '../screens/Radar/AllEventsScreen';
+import { AllCommunitiesScreen } from '../screens/Radar/AllCommunitiesScreen';
 import { ChatScreen } from '../screens/Chat/ChatScreen';
 import { ProfileScreen } from '../screens/Profile/ProfileScreen';
 import { EditProfileScreen } from '../screens/Profile/EditProfileScreen';
@@ -48,9 +51,13 @@ const RadarStackScreen = () => (
         <RadarStack.Screen name="RadarMain" component={RadarScreen} />
         <RadarStack.Screen name="EventDetail" component={EventDetailScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="CommunityDetail" component={CommunityDetailScreen} options={{ headerShown: false }} />
+        <RadarStack.Screen name="Comunidade" component={CommunityScreen} options={{ headerShown: false }} />
+        <RadarStack.Screen name="CreateCommunity" component={CreateCommunityModal} options={{ headerShown: false, presentation: 'modal' }} />
         <RadarStack.Screen name="PlaceDetail" component={PlaceDetailScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="Chat" component={ChatScreen} options={{ headerShown: false }} />
         <RadarStack.Screen name="PublicProfile" component={PublicProfileScreen} options={{ headerShown: false }} />
+        <RadarStack.Screen name="AllEvents" component={AllEventsScreen} options={{ headerShown: false }} />
+        <RadarStack.Screen name="AllCommunities" component={AllCommunitiesScreen} options={{ headerShown: false }} />
     </RadarStack.Navigator>
 );
 
@@ -76,6 +83,8 @@ const AgoraStackScreen = () => (
         <AgoraStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <AgoraStack.Screen name="Chat" component={ChatScreen} />
         <AgoraStack.Screen name="PublicProfile" component={PublicProfileScreen} />
+        <AgoraStack.Screen name="AllEvents" component={AllEventsScreen} options={{ headerShown: false }} />
+        <AgoraStack.Screen name="AllCommunities" component={AllCommunitiesScreen} options={{ headerShown: false }} />
     </AgoraStack.Navigator>
 );
 
@@ -87,9 +96,12 @@ const ExploreStackScreen = () => (
         <ExploreStack.Screen name="PlaceDetail" component={PlaceDetailScreen} />
         <ExploreStack.Screen name="CommunityDetail" component={CommunityDetailScreen} />
         <ExploreStack.Screen name="Comunidade" component={CommunityScreen} />
+        <ExploreStack.Screen name="CreateCommunity" component={CreateCommunityModal} options={{ presentation: 'modal' }} />
         <ExploreStack.Screen name="EventDetail" component={EventDetailScreen} />
         <ExploreStack.Screen name="Chat" component={ChatScreen} />
         <ExploreStack.Screen name="PublicProfile" component={PublicProfileScreen} />
+        <ExploreStack.Screen name="AllEvents" component={AllEventsScreen} options={{ headerShown: false }} />
+        <ExploreStack.Screen name="AllCommunities" component={AllCommunitiesScreen} options={{ headerShown: false }} />
     </ExploreStack.Navigator>
 );
 

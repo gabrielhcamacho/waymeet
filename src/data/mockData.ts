@@ -5,20 +5,20 @@ import {
 } from '../types';
 
 export const CATEGORIES: Category[] = [
-    { id: '1', name: 'Family', icon: '👨‍👩‍👧‍👦', color: '#FF7A00' },
-    { id: '2', name: 'Romance', icon: '💑', color: '#E91E63' },
-    { id: '3', name: 'Friends', icon: '👫', color: '#9C27B0' },
-    { id: '4', name: 'Adventures', icon: '🏔️', color: '#4CAF50' },
-    { id: '5', name: 'Historic', icon: '🏛️', color: '#795548' },
-    { id: '6', name: 'Cultural', icon: '🎭', color: '#FF5722' },
-    { id: '7', name: 'Rural', icon: '🌾', color: '#8BC34A' },
-    { id: '8', name: 'Summer', icon: '☀️', color: '#FFC107' },
-    { id: '9', name: 'Sports', icon: '⚽', color: '#2196F3' },
-    { id: '10', name: 'Musical', icon: '🎵', color: '#673AB7' },
-    { id: '11', name: 'Ecotour', icon: '🌿', color: '#009688' },
-    { id: '12', name: 'Gastronomic', icon: '🍽️', color: '#F44336' },
-    { id: '13', name: 'Encontros', icon: '🎉', color: '#3F51B5' },
-    { id: '14', name: 'Business', icon: '💼', color: '#607D8B' },
+    { id: '1', name: 'Family', icon: 'people-outline', color: '#FF7A00' },
+    { id: '2', name: 'Romance', icon: 'heart-outline', color: '#E91E63' },
+    { id: '3', name: 'Friends', icon: 'person-add-outline', color: '#9C27B0' },
+    { id: '4', name: 'Adventures', icon: 'trail-sign-outline', color: '#4CAF50' },
+    { id: '5', name: 'Historic', icon: 'business-outline', color: '#795548' },
+    { id: '6', name: 'Cultural', icon: 'color-palette-outline', color: '#FF5722' },
+    { id: '7', name: 'Rural', icon: 'leaf-outline', color: '#8BC34A' },
+    { id: '8', name: 'Summer', icon: 'sunny-outline', color: '#FFC107' },
+    { id: '9', name: 'Sports', icon: 'football-outline', color: '#2196F3' },
+    { id: '10', name: 'Musical', icon: 'musical-notes-outline', color: '#673AB7' },
+    { id: '11', name: 'Ecotour', icon: 'leaf-outline', color: '#009688' },
+    { id: '12', name: 'Gastronomic', icon: 'restaurant-outline', color: '#F44336' },
+    { id: '13', name: 'Encontros', icon: 'sparkles-outline', color: '#3F51B5' },
+    { id: '14', name: 'Business', icon: 'briefcase-outline', color: '#607D8B' },
 ];
 
 export const MOCK_USERS: User[] = [
@@ -389,14 +389,14 @@ export const MOCK_HEAT_ZONES: HeatZone[] = [
 ];
 
 export const MOCK_NEARBY_ACTIVITIES: NearbyActivity[] = [
-    { id: '1', emoji: '☕', label: 'Café', peopleCount: 3, distance: '800m', time: 'agora', eventId: '3', locationName: 'Café Escondido' },
-    { id: '2', emoji: '🍻', label: 'Drinks', peopleCount: 5, distance: '1km', time: 'agora', locationName: 'Bar Valentino' },
-    { id: '3', emoji: '🚶', label: 'Caminhada', peopleCount: 2, distance: '500m', time: 'agora', locationName: 'Lago Igapó' },
-    { id: '4', emoji: '⚽', label: 'Futebol', peopleCount: 8, distance: '2km', time: 'em 30 min', eventId: '1', locationName: 'Praça do Centro' },
-    { id: '5', emoji: '🧘', label: 'Yoga', peopleCount: 4, distance: '1.5km', time: 'em 1h', eventId: '6', locationName: 'Lago Igapó' },
-    { id: '6', emoji: '🏐', label: 'Vôlei', peopleCount: 15, distance: '1.2km', time: 'agora', eventId: '7', locationName: 'Praia Central BC' },
-    { id: '7', emoji: '🏄‍♂️', label: 'Surf', peopleCount: 6, distance: '2.5km', time: 'em 1h', eventId: '8', locationName: 'Estaleirinho BC' },
-    { id: '8', emoji: '🍸', label: 'Drinks', peopleCount: 22, distance: '800m', time: 'daqui a pouco', eventId: '9', locationName: 'Bar da Orla BC' },
+    { id: '1', iconName: 'cafe-outline', label: 'Café', peopleCount: 3, distance: '800m', time: 'agora', eventId: '3', locationName: 'Café Escondido' },
+    { id: '2', iconName: 'wine-outline', label: 'Drinks', peopleCount: 5, distance: '1km', time: 'agora', locationName: 'Bar Valentino' },
+    { id: '3', iconName: 'walk-outline', label: 'Caminhada', peopleCount: 2, distance: '500m', time: 'agora', locationName: 'Lago Igapó' },
+    { id: '4', iconName: 'football-outline', label: 'Futebol', peopleCount: 8, distance: '2km', time: 'em 30 min', eventId: '1', locationName: 'Praça do Centro' },
+    { id: '5', iconName: 'body-outline', label: 'Yoga', peopleCount: 4, distance: '1.5km', time: 'em 1h', eventId: '6', locationName: 'Lago Igapó' },
+    { id: '6', iconName: 'basketball-outline', label: 'Vôlei', peopleCount: 15, distance: '1.2km', time: 'agora', eventId: '7', locationName: 'Praia Central BC' },
+    { id: '7', iconName: 'water-outline', label: 'Surf', peopleCount: 6, distance: '2.5km', time: 'em 1h', eventId: '8', locationName: 'Estaleirinho BC' },
+    { id: '8', iconName: 'beer-outline', label: 'Drinks', peopleCount: 22, distance: '800m', time: 'daqui a pouco', eventId: '9', locationName: 'Bar da Orla BC' },
 ];
 
 export const MOCK_ITINERARIES: Itinerary[] = [
